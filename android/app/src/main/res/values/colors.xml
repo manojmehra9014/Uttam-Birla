@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Define your color resources here -->
+    <color name="ic_launcher_background">#FFFFFF</color> <!-- White background, change as needed -->
+    <color name="primary_color">#6200EE</color> <!-- Example primary color -->
+    <color name="primary_dark_color">#3700B3</color> <!-- Example primary dark color -->
+    <color name="accent_color">#03DAC5</color> <!-- Example accent color -->
+</resources>
