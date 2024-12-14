@@ -3,8 +3,8 @@ import axios from 'axios';
 
 // Create an Axios instance
 const apiClient = axios.create({
-    baseURL: 'http://3.95.211.195:3000',
-    timeout: 5000, // Set a timeout of 5 seconds (optional)
+    baseURL: 'https://api.uttambirla.com/',
+    timeout: 10000, // Set a timeout of 5 seconds (optional)
     headers: {
         'Content-Type': 'application/json',
     },
@@ -29,7 +29,7 @@ export const postData = async (endpoint, payload) => {
 
         const response = await apiClient.post(endpoint, payload);
 
-        console.log('Response:', response);
+        // console.log('Response:', response);
         return response.data;
     } catch (error) {
         if (error) {

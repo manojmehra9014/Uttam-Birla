@@ -8,40 +8,45 @@ import { useTranslation } from 'react-i18next';
 const ForgetPassScreen = ({ componentId }) => {
     const { t, i18n } = useTranslation();
     const [phone, setPhone] = useState('');
-
+    const handleOpt = () => {
+        if(!phone){
+            alert("Please fill the phone number!");
+        }else{
+            console.log("fghfhgfhg jhjhm");
+        }
+    }
     return (
         <SafeAreaProvider>
             <NativeBaseProvider>
-                <View style={{ height: "100%" }}>
-
-                    <View style={styles.containerimage}>
-                        <Image
-                            source={require('../assets/image/logo.png')}
-                            style={styles.image}
-                            resizeMode="contain"
-                        />
+                <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+                    <View style={{ height: "100%" }}>
+                        <View style={styles.containerimage}>
+                            <Image
+                                source={require('../assets/image/logo.png')}
+                                style={styles.image}
+                                resizeMode="contain"
+                            />
+                        </View>
+                        <View style={styles.container}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder={t('phonePlaceholder')}
+                                value={phone}
+                                onChangeText={setPhone}
+                                keyboardType="phone-pad"
+                                placeholderTextColor="#AAAAAA"
+                            />
+                            <TouchableOpacity onPress={handleOpt} style={styles.button}>
+                                <Text style={styles.buttonText}>{t("Get OTP")}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => {
+                                Navigation.pop(componentId);
+                            }} style={styles.forgetbutton}>
+                                <Text style={styles.forgetbuttonText}>{t("back")}</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
-
-                    <View style={styles.container}>
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder={t('phonePlaceholder')}
-                            value={phone}
-                            onChangeText={setPhone}
-                            keyboardType="phone-pad"
-                            placeholderTextColor="#AAAAAA"
-                        />
-                        <TouchableOpacity onPress={{}} style={styles.button}>
-                            <Text style={styles.buttonText}>{t("Get OTP")}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => {
-                            Navigation.pop(componentId);
-                        }} style={styles.forgetbutton}>
-                            <Text style={styles.forgetbuttonText}>{t("back")}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                </ScrollView>
             </NativeBaseProvider>
         </SafeAreaProvider>
     );
@@ -67,18 +72,18 @@ const styles = StyleSheet.create({
     input: {
         width: '100%',
         borderWidth: 1,
-        padding: 12,
-        marginBottom: 10,
+        padding: 8,
+        paddingLeft: 12,
         borderRadius: 30,
         borderColor: '#1230AE',
         backgroundColor: '#FFFFFF',
     },
     button: {
         width: '90%',
-        marginTop: 100,
+        marginTop: 60,
         backgroundColor: "#1230AE",
         borderRadius: 40,
-        height: '8%',
+        height: 40,
         justifyContent: "center",
         alignItems: "center"
     },
@@ -86,7 +91,7 @@ const styles = StyleSheet.create({
         width: '90%',
         backgroundColor: "#fff",
         borderRadius: 40,
-        height: '8%',
+        height: 40,
         marginTop: 15,
         justifyContent: "center",
         alignItems: "center",

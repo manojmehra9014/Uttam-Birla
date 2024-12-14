@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { setAuthentication } from '../services/authService';
 import { fetchData, postData } from '../services/apiService';
 import Icon from 'react-native-vector-icons/Feather';
+import { getParsedCommandLineOfConfigFile } from 'typescript/lib/typescript';
 
 const SignUpScreen = ({ componentId }) => {
     const { t, i18n } = useTranslation();
@@ -87,20 +88,17 @@ const SignUpScreen = ({ componentId }) => {
                                 <Avatar bg="white" size="xl" source={require('../assets/image/logo.png')}></Avatar>
                             </View>
                             <View>
-                                <Text style={{ fontSize: 16, color: "#1230AE", fontWeight: 700 }}>
+                                <Text style={{ fontSize: 14, color: "#1230AE", fontWeight: 700 }}>
                                     {t('welcomeMessage')}
                                 </Text>
-                                <Text style={{ fontSize: 16, color: "#1230AE", fontWeight: 700 }}>
+                                <Text style={{ fontSize: 14, color: "#1230AE", fontWeight: 700 }}>
                                     {t('subMessage')}
                                 </Text>
                             </View>
                         </View>
                         <Divider />
                         <View style={{ flexGrow: 1, padding: 16, backgroundColor: '#fff' }}>
-                            <Text style={{ fontSize: 40, color: "#1230AE", fontWeight: 700 }}>
-                                {t('hello')}
-                            </Text>
-                            <Text style={{ fontSize: 40, color: "#1230AE", fontWeight: 700 }}>
+                            <Text style={{ fontSize: 25, color: "#1230AE", fontWeight: 700 }}>
                                 {t('signUp')}
                             </Text>
                         </View>
@@ -227,18 +225,18 @@ const SignUpScreen = ({ componentId }) => {
                             onPress={handleSignUp}
                             style={{
                                 width: '90%',
-                                marginTop: 70,
+                                marginTop: 10,
                                 backgroundColor: "#1230AE",
                                 borderRadius: 40,
-                                height: '6%',
+                                height: 40,
                                 justifyContent: "center",
                                 alignItems: "center",
                             }}
                         >
-                            <Text>{t('signUp')}</Text>
+                            <Text style={{ color: "#fff" }}>{t('signUp')}</Text>
                         </TouchableOpacity>
                         <Text
-                            style={[styles.switchToLogin, { marginBottom: 10 }]}
+                            style={[styles.switchToLogin, { marginBottom: 5 }]}
                             onPress={() => {
                                 Navigation.push(componentId, {
                                     component: {
@@ -278,7 +276,8 @@ const styles = StyleSheet.create({
     input: {
         width: '100%',
         borderWidth: 1,
-        padding: 12,
+        padding: 8,
+        paddingLeft: 12,
         marginBottom: 10,
         borderRadius: 30,
         borderColor: '#1230AE',
@@ -308,7 +307,7 @@ const styles = StyleSheet.create({
     },
     switchToLogin: {
         textAlign: 'center',
-        marginTop: 20,
+        marginTop: 5,
         marginBottom: 30,
         padding: 15,
         color: '#1230AE',

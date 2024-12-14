@@ -1,33 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
 import { Navigation } from 'react-native-navigation';
 import SplashScreen from 'react-native-splash-screen';
-import { NativeBaseProvider, Spinner } from "native-base";
+import { NativeBaseProvider } from "native-base";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
-import i18n from '../services/i18n';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchData, postData } from '../services/apiService';
-
-
+import { setAuthentication } from '../services/authService';
+import Spinner from 'react-native-loading-spinner-overlay';
 Icon.loadFont();
 
 const LoginScreen = ({ componentId }) => {
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
-    const [email, setEmail] = useState('');
     const { t, i18n } = useTranslation();
     const [spinner, showSpinner] = useState('fasle');
-    const [language, setLanguage] = useState('en'); // Default language is 'en'
+    const [language, setLanguage] = useState('en');
 
-    // Change language function
     const changeLanguage = async (language) => {
         i18n.changeLanguage(language);
         setLanguage(language);
         try {
-            // Save selected language to AsyncStorage
             await AsyncStorage.setItem('selectedLanguage', language);
         } catch (error) {
             console.error('Error saving language to AsyncStorage', error);
@@ -35,15 +31,18 @@ const LoginScreen = ({ componentId }) => {
     };
 
     useEffect(() => {
-        // Hide splash screen once app is loaded
         SplashScreen.hide();
-
-        // Retrieve language from AsyncStorage
         const getLanguageFromStorage = async () => {
             try {
                 const savedLanguage = await AsyncStorage.getItem('selectedLanguage');
+                const phone = await AsyncStorage.getItem('phone')
+                const password = await AsyncStorage.getItem('password');
+                if (phone && password) {
+                    setPhone(phone);
+                    setPassword(password);
+                    handleLogin(phone, password);
+                }
                 if (savedLanguage) {
-                    // If a saved language exists, apply it
                     i18n.changeLanguage(savedLanguage);
                     setLanguage(savedLanguage);
                 }
@@ -51,36 +50,42 @@ const LoginScreen = ({ componentId }) => {
                 console.error('Error loading language from AsyncStorage', error);
             }
         };
-
         getLanguageFromStorage();
-
         Navigation.setDefaultOptions({
             topBar: {
-                visible: false, // Disable the top bar globally
-                height: 0,      // Optional: Set height to 0
+                visible: false,
+                height: 0,
             },
         });
     }, []);
 
-    const handleLogin = async () => {
-        if (email && phone && password) {
+    const handleLogin = async (phone, password) => {
+        if (phone && password) {
             showSpinner(true);
             const payload = {
                 "phone": phone,
-                "email": email,
                 "password": password,
             };
-            const response = await postData('/user/login', payload);
-            if (response.success) {
-                Navigation.push(componentId, {
-                    component: {
-                        name: 'NavigationController',
-                    },
-                });
-            } else {
+            try {
+                const response = await postData('/user/login', payload);
+                if (response.success) {
+                    showSpinner(false);
+                    // await setAuthentication(true);
+                    await AsyncStorage.setItem('phone', phone);
+                    await AsyncStorage.setItem('password', password);
+                    Navigation.push(componentId, {
+                        component: {
+                            name: 'NavigationController',
+                        },
+                    });
+                } else {
+                    showSpinner(false);
+                    alert("Something went wrong!");
+                }
+            } catch (err) {
+                showSpinner(false);
                 alert("Something went wrong!");
             }
-            showSpinner(false);
         } else {
             await setAuthentication(false);
             alert(t('fillAllFields'));
@@ -91,75 +96,67 @@ const LoginScreen = ({ componentId }) => {
         <I18nextProvider i18n={i18n}>
             <SafeAreaProvider>
                 <NativeBaseProvider>
-                    <View style={{ height: "100%" }}>
-                        <TouchableOpacity
-                            style={styles.languageIconContainer}
-                            onPress={() => changeLanguage(language === 'en' ? 'hi' : 'en')}
-                        >
-                            <Icon name="language" size={40} color="#1230AE" />
-                        </TouchableOpacity>
-                        <View style={styles.containerimage}>
-                            <Image
-                                source={require('../assets/image/logo.png')}
-                                style={styles.image}
-                                resizeMode="contain"
-                            />
-                        </View>
-                        <View style={styles.container}>
-                            <TextInput
-                                style={styles.input}
-                                placeholder={t('phonePlaceholder')}
-                                value={phone}
-                                onChangeText={setPhone}
-                                keyboardType="phone-pad"
-                                placeholderTextColor="#AAAAAA"
-                            />
-                            <TextInput
-                                style={styles.input}
-                                placeholder={t('emailPlaceholder')}
-                                value={email}
-                                onChangeText={setEmail}
-                                keyboardType="email-address"
-                                placeholderTextColor="#AAAAAA"
-                            />
-
-                            <TextInput
-                                style={styles.input}
-                                placeholder={t("password")}
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry
-                                placeholderTextColor="#AAAAAA"
-                            />
-
-                            <TouchableOpacity onPress={handleLogin} style={styles.button}>
-                                <Text style={styles.buttonText}>{t("login")}</Text>
+                    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+                        <View style={{ height: "100%" }}>
+                            <TouchableOpacity
+                                style={styles.languageIconContainer}
+                                onPress={() => changeLanguage(language === 'en' ? 'hi' : 'en')}
+                            >
+                                <Icon name="language" size={40} color="#1230AE" />
                             </TouchableOpacity>
-
-                            <TouchableOpacity onPress={() => {
-                                Navigation.push(componentId, {
-                                    component: {
-                                        name: 'ForgetPassScreen',
-                                    },
-                                });
-                            }} style={styles.forgetbutton}>
-                                <Text style={styles.forgetbuttonText}>{t("forgetPassword")}</Text>
-                            </TouchableOpacity>
-
-                            <Text
-                                style={styles.switchToLogin}
-                                onPress={() => {
+                            <View style={styles.containerimage}>
+                                <Image
+                                    source={require('../assets/image/logo.png')}
+                                    style={styles.image}
+                                    resizeMode="contain"
+                                />
+                            </View>
+                            <View style={styles.container}>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder={t('phonePlaceholder')}
+                                    value={phone}
+                                    onChangeText={setPhone}
+                                    keyboardType="phone-pad"
+                                    placeholderTextColor="#AAAAAA"
+                                />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder={t("password")}
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    secureTextEntry
+                                    placeholderTextColor="#AAAAAA"
+                                />
+                                <TouchableOpacity onPress={() => { handleLogin(phone, password) }} style={styles.button}>
+                                    <Text style={styles.buttonText}>{t("login")}</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => {
                                     Navigation.push(componentId, {
                                         component: {
-                                            name: 'SignUpScreen',
+                                            name: 'ForgetPassScreen',
                                         },
                                     });
-                                }}
-                            >
-                                {t("dontHaveAccount")}
-                            </Text>
+                                }} style={styles.forgetbutton}>
+                                    <Text style={styles.forgetbuttonText}>{t("forgetPassword")}</Text>
+                                </TouchableOpacity>
+
+                                <Text
+                                    style={styles.switchToLogin}
+                                    onPress={() => {
+                                        Navigation.push(componentId, {
+                                            component: {
+                                                name: 'SignUpScreen',
+                                            },
+                                        });
+                                    }}
+                                >
+                                    {t("dontHaveAccount")}
+                                </Text>
+                            </View>
                         </View>
-                    </View>
+                        <Spinner visible={spinner} textContent={t("Loading...")} textStyle={{ color: "#fff" }} />
+                    </ScrollView>
                 </NativeBaseProvider>
             </SafeAreaProvider>
         </I18nextProvider>
@@ -173,6 +170,17 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         alignItems: 'center',
     },
+    spinnerOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 2, // Ensures it appears above other elements
+    },
     containerimage: {
         backgroundColor: '#fff',
         padding: 4,
@@ -181,12 +189,13 @@ const styles = StyleSheet.create({
     },
     image: {
         width: '100%',
-        height: 400,
+        height: 300,
     },
     input: {
         width: '100%',
         borderWidth: 1,
-        padding: 12,
+        padding: 8,
+        paddingLeft: 12,
         marginBottom: 10,
         borderRadius: 30,
         borderColor: '#1230AE',
@@ -195,10 +204,10 @@ const styles = StyleSheet.create({
     },
     button: {
         width: '90%',
-        marginTop: 100,
+        marginTop: 50,
         backgroundColor: "#1230AE",
         borderRadius: 40,
-        height: '8%',
+        height: 40,
         justifyContent: "center",
         alignItems: "center"
     },
@@ -206,7 +215,7 @@ const styles = StyleSheet.create({
         width: '90%',
         backgroundColor: "#fff",
         borderRadius: 40,
-        height: '8%',
+        height: 40,
         marginTop: 15,
         justifyContent: "center",
         alignItems: "center",

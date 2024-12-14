@@ -2,6 +2,7 @@ import { AppRegistry } from 'react-native';
 import { Navigation } from 'react-native-navigation';
 import { name as appName } from './app.json';
 import { checkAuthentication } from './src/services/authService'; // Import authentication check service
+// Disable font scaling globally for all Text and TextInput components
 
 // Import your screens
 import LoginScreen from './src/components/LoginScreen';
@@ -30,7 +31,7 @@ const initializeApp = async () => {
   const isAuthenticated = await checkAuthentication();
   console.log(isAuthenticated);
   // Set the root navigation based on authentication status
-  if (isAuthenticated) {
+  if (false) {
     // If authenticated, show HomeScreen
     Navigation.setRoot({
       root: {
