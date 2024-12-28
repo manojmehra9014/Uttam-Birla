@@ -29,7 +29,7 @@ Navigation.registerComponent('NavigationController', () => NavigationController)
 // Function to check authentication status and navigate accordingly
 const initializeApp = async () => {
   const isAuthenticated = await checkAuthentication();
-  console.log(isAuthenticated);
+  // console.log(isAuthenticated);
   // Set the root navigation based on authentication status
   if (false) {
     // If authenticated, show HomeScreen

@@ -1,22 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, Alert } from 'react-native';
 import { Navigation } from 'react-native-navigation';
 import SplashScreen from 'react-native-splash-screen';
 import { NativeBaseProvider } from "native-base";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-import { I18nextProvider } from 'react-i18next';
+import { I18nextProvider, useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchData, postData } from '../services/apiService';
 import { setAuthentication } from '../services/authService';
 import Spinner from 'react-native-loading-spinner-overlay';
 Icon.loadFont();
+import i18n from '../services/i18n';
+import utils from '../services/utils';
 
 const LoginScreen = ({ componentId }) => {
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const [spinner, showSpinner] = useState('fasle');
     const [language, setLanguage] = useState('en');
 
@@ -67,12 +68,14 @@ const LoginScreen = ({ componentId }) => {
                 "password": password,
             };
             try {
-                const response = await postData('/user/login', payload);
-                if (response.success) {
-                    showSpinner(false);
-                    // await setAuthentication(true);
+                const response = await postData('user/login', payload);
+                showSpinner(false);
+                if (response.status) {
                     await AsyncStorage.setItem('phone', phone);
                     await AsyncStorage.setItem('password', password);
+                    utils.token = response?.data?.access_token;
+                    utils.userType = response?.data?.data?.userType;
+                    utils.agentId = response?.data?.data?._id;
                     Navigation.push(componentId, {
                         component: {
                             name: 'NavigationController',
@@ -80,15 +83,27 @@ const LoginScreen = ({ componentId }) => {
                     });
                 } else {
                     showSpinner(false);
-                    alert("Something went wrong!");
+                    Alert.alert(t("Info"), t("An_error_occurred"), [
+                        {
+                            text: t("Ok"),
+                        }
+                    ])
                 }
             } catch (err) {
                 showSpinner(false);
-                alert("Something went wrong!");
+                Alert.alert(t("Info"), t("Please_fill_all_required_fields_correctly_to_proceed"), [
+                    {
+                        text: t("Ok"),
+                    }
+                ])
             }
         } else {
             await setAuthentication(false);
-            alert(t('fillAllFields'));
+            Alert.alert(t("Info"), t("fillAllFields"), [
+                {
+                    text: t("Ok"),
+                }
+            ])
         }
     };
 
@@ -116,6 +131,7 @@ const LoginScreen = ({ componentId }) => {
                                     style={styles.input}
                                     placeholder={t('phonePlaceholder')}
                                     value={phone}
+                                    maxLength={12}
                                     onChangeText={setPhone}
                                     keyboardType="phone-pad"
                                     placeholderTextColor="#AAAAAA"
@@ -155,7 +171,7 @@ const LoginScreen = ({ componentId }) => {
                                 </Text>
                             </View>
                         </View>
-                        <Spinner visible={spinner} textContent={t("Loading...")} textStyle={{ color: "#fff" }} />
+                        <Spinner visible={spinner} textContent={t("Loading")} textStyle={{ color: "#fff" }} />
                     </ScrollView>
                 </NativeBaseProvider>
             </SafeAreaProvider>
@@ -176,10 +192,10 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 2, // Ensures it appears above other elements
+        zIndex: 2,
     },
     containerimage: {
         backgroundColor: '#fff',
@@ -253,5 +269,4 @@ const styles = StyleSheet.create({
         color: '#1230AE',
     },
 });
-
 export default LoginScreen;

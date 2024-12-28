@@ -1,36 +1,61 @@
 import axios from 'axios';
+import utils from './utils';
+import { Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
+const { t } = useTranslation();
 
-
-// Create an Axios instance
 const apiClient = axios.create({
     baseURL: 'https://api.uttambirla.com/',
-    timeout: 10000, // Set a timeout of 5 seconds (optional)
+    timeout: 60000,
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-// Example of a GET request
 export const fetchData = async (endpoint) => {
     try {
         const response = await apiClient.get(endpoint);
         return response.data;
     } catch (error) {
-        console.error('Error fetching data:', error.message);
-        throw error;
+        if (error.response) {
+            const { data, status } = error.response;
+            console.error('Error Response:', data);
+            console.error('Status Code:', status);
+            Alert.alert(t("Info"), data.error);
+        } else {
+            console.error('Error:', error.message);
+        }
     }
 };
 
-// Example of a POST request
 export const postData = async (endpoint, payload) => {
     try {
         console.log('Request URL:', apiClient.defaults.baseURL + endpoint);
         console.log('Payload:', JSON.stringify(payload));
-
         const response = await apiClient.post(endpoint, payload);
+        return response;
+    } catch (error) {
+        if (error.response) {
+            const { data, status } = error.response;
+            console.error('Error Response:', data);
+            console.error('Status Code:', status);
+            Alert.alert(t("Info"), t("Please_fill_all_required_fields_correctly_to_proceed"), [
+                {
+                    text: t("Ok"),
+                }
+            ]);
+        } else {
+            console.error('Error:', error.message);
+        }
+    }
+};
 
-        // console.log('Response:', response);
-        return response.data;
+export const getData = async (endpoint, payload = {}) => {
+    try {
+        console.log('Request URL:', apiClient.defaults.baseURL + endpoint);
+        console.log('Payload:', JSON.stringify(payload));
+        const response = await apiClient.get(endpoint, payload);
+        return response;
     } catch (error) {
         if (error) {
             console.error('Error Response:', error);
@@ -38,3 +63,16 @@ export const postData = async (endpoint, payload) => {
         throw error;
     }
 };
+
+apiClient.interceptors.request.use(
+    async (config) => {
+        const token = utils.token;
+        if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);

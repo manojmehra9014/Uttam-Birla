@@ -1,22 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Navigation } from 'react-native-navigation';
 import SplashScreen from 'react-native-splash-screen';
 import Indian_states_cities_list from "indian-states-cities-list";
-import { NativeBaseProvider, Avatar, Select, CheckIcon, Divider } from "native-base";
+import { NativeBaseProvider, Avatar, Select, CheckIcon, Divider, Box, Input, Button } from "native-base";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { setAuthentication } from '../services/authService';
 import { fetchData, postData } from '../services/apiService';
 import Icon from 'react-native-vector-icons/Feather';
-import { getParsedCommandLineOfConfigFile } from 'typescript/lib/typescript';
-
+import Iconn from "react-native-vector-icons/MaterialIcons";
+import Spinner from 'react-native-loading-spinner-overlay';
 const SignUpScreen = ({ componentId }) => {
-    const { t, i18n } = useTranslation();
-    const [language, setLanguage] = useState('en');
+    const { t } = useTranslation();
     const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [address, setAddress] = useState('');
     const [pincode, setPincode] = useState('');
@@ -26,6 +24,9 @@ const SignUpScreen = ({ componentId }) => {
     const [selectedCity, setSelectedCity] = useState(null);
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [show, setShow] = React.useState('false');
+    const [spinner, showSpinner] = useState('fasle');
+    const handleClick = () => setShow(!show);
 
     useEffect(() => {
         SplashScreen.hide();
@@ -45,37 +46,56 @@ const SignUpScreen = ({ componentId }) => {
     }, [selectedState]);
 
     const handleSignUp = async () => {
-        if (username && email && phone && address && pincode && state && city && password && selectedCity) {
-            const payload = {
-                "name": username,
-                "phone": phone,
-                "email": email,
-                "password": password,
-                "city": selectedCity,
-                "district": address,
-                "state": selectedState,
-            };
-            const response = await postData('/user', payload);
-            if (response.seccess) {
-                alert(t('signUpSuccess'));
-                Navigation.push(componentId, {
-                    component: {
-                        name: 'LoginScreen',
-                    },
-                });
+        if (username && phone && address && pincode && state && city && password && selectedCity) {
+            try {
+                const payload = {
+                    "name": username,
+                    "phone": phone,
+                    "password": password,
+                    "city": selectedCity,
+                    "district": address,
+                    "state": selectedState,
+                };
+                showSpinner(true);
+                const response = await postData('user', payload);
+                if (response.status == 201) {
+                    Alert.alert(t("Info"), t("signUpSuccess"), [
+                        {
+                            text: t("Ok"),
+                        }
+                    ])
+                    Navigation.push(componentId, {
+                        component: {
+                            name: 'LoginScreen',
+                        },
+                    });
+                } else {
+                    console.log("Getting issue in app");
+                    Alert.alert(t("Info"), t("An_error_occurred"), [
+                        {
+                            text: t("Ok"),
+                        }
+                    ])
+                }
+            } catch (error) {
+                showSpinner(false);
+                Alert.alert(t("Info"), t("An_error_occurred"), [
+                    {
+                        text: t("Ok"),
+                    }
+                ])
+            } finally {
+                showSpinner(false);
             }
+
         } else {
             await setAuthentication(false);
-            alert(t('fillAllFields'));
+            Alert.alert(t("Info"), t("fillAllFields"), [
+                {
+                    text: t("Ok"),
+                }
+            ])
         }
-    };
-
-    const handleStateChange = (state) => {
-        setSelectedState(state);
-    };
-
-    const handleCityChange = (value) => {
-        setSelectedCity(value);
     };
 
     return (
@@ -109,14 +129,6 @@ const SignUpScreen = ({ componentId }) => {
                             placeholder={t('usernamePlaceholder')}
                             value={username}
                             onChangeText={setUsername}
-                            placeholderTextColor="#AAAAAA"
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder={t('emailPlaceholder')}
-                            value={email}
-                            onChangeText={setEmail}
-                            keyboardType="email-address"
                             placeholderTextColor="#AAAAAA"
                         />
                         <TextInput
@@ -204,14 +216,40 @@ const SignUpScreen = ({ componentId }) => {
                             </View>
                         )}
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder={t('passwordPlaceholder')}
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry
-                            placeholderTextColor="#AAAAAA"
-                        />
+                        <Box alignItems="center" marginBottom={5}>
+                            <Input
+                                type={show ? "text" : "password"}
+                                w="100%"
+                                py="1.5"
+                                h={12}
+                                borderRadius="50"
+                                borderColor={"#1230AE"}
+                                _focus={{
+                                    borderColor: "#1230AE",
+                                    bg: "white",
+                                }}
+                                value={password}
+                                onChangeText={setPassword}
+                                InputRightElement={
+                                    <Button
+                                        size="xs"
+                                        // rounded="full"
+                                        w="1/6"
+                                        h="full"
+                                        bg="#fff"
+                                        _pressed={{ bg: "#fff" }}
+                                        onPress={handleClick}
+                                    >
+                                        <Iconn
+                                            name={show ? "visibility-off" : "visibility"}
+                                            size={25}
+                                            color="#1230AE"
+                                        />
+                                    </Button>
+                                }
+                                placeholder="Password"
+                            />
+                        </Box>
 
                         <TextInput
                             style={styles.input}
@@ -248,6 +286,7 @@ const SignUpScreen = ({ componentId }) => {
                             {t('alreadyHaveAccount')}
                         </Text>
                     </View>
+                    <Spinner visible={spinner} textContent={t("Loading")} textStyle={{ color: "#fff" }} />
                 </ScrollView>
             </NativeBaseProvider>
         </SafeAreaProvider>

@@ -1,17 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Modal, Button, ScrollView } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // For storing selected items
-import { Avatar, Divider } from "native-base";
-import Icon from 'react-native-vector-icons/FontAwesome'; // Importing the Icon component
+import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Modal, ScrollView, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Avatar, Divider, Select, CheckIcon } from "native-base";
+import Icon from 'react-native-vector-icons/FontAwesome';
+import { useTranslation } from 'react-i18next';
+import { fetchData, postData, getData } from '../services/apiService';
+import utils from '../services/utils';
+import { Button } from 'react-native-paper';
 
 const CartScreen = () => {
+    const { t } = useTranslation();
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [totalAmount, setTotalAmount] = useState(0);
+    const [distributer, setDistributer] = useState(null);
+    const [distributerList, setDistributerList] = useState(null);
 
-    useEffect(() => {
-        // Fetch selected items from AsyncStorage when the screen loads
+    useEffect(async () => {
         const fetchCartItems = async () => {
             try {
                 const savedItems = await AsyncStorage.getItem('selectedItems');
@@ -31,8 +37,21 @@ const CartScreen = () => {
                 setLoading(false);
             }
         };
-
+        const fetchDistributerListData = async () => {
+            try {
+                const response = await getData('user/distributer/list');
+                console.log(response.data.data);
+                setDistributerList(response.data.data);
+            } catch (error) {
+                Alert.alert(t("Info"), t("An_error_occurred"), [
+                    {
+                        text: t("Ok"),
+                    }
+                ])
+            }
+        }
         fetchCartItems();
+        fetchDistributerListData();
     }, []);
 
     const calculateTotal = (items) => {
@@ -47,7 +66,7 @@ const CartScreen = () => {
 
     const handleIncreaseQuantity = (itemId) => {
         const updatedItems = cartItems.map(item =>
-            item.id === itemId ? { ...item, quantity: item.quantity + 1 } : item
+            item._id === itemId ? { ...item, quantity: item.quantity + 1 } : item
         );
         setCartItems(updatedItems);
         calculateTotal(updatedItems);
@@ -55,14 +74,14 @@ const CartScreen = () => {
 
     const handleDecreaseQuantity = (itemId) => {
         const updatedItems = cartItems.map(item =>
-            item.id === itemId && item.quantity > 1 ? { ...item, quantity: item.quantity - 1 } : item
+            item._id === itemId && item.quantity > 1 ? { ...item, quantity: item.quantity - 1 } : item
         );
         setCartItems(updatedItems);
         calculateTotal(updatedItems);
     };
 
     const handleRemoveItem = async (itemId) => {
-        const updatedItems = cartItems.filter(item => item.id !== itemId);
+        const updatedItems = cartItems.filter(item => item._id !== itemId);
         setCartItems(updatedItems);
         calculateTotal(updatedItems);
         try {
@@ -73,57 +92,57 @@ const CartScreen = () => {
     };
 
     const handleCheckout = () => {
-        // Trigger the checkout modal
         setShowModal(true);
     };
 
     const confirmCheckout = async () => {
-        // Logic to handle API request for placing the order
+        if (!distributer || !utils.agentId) {
+            Alert.alert("Info", "Please select all required field!");
+            return;
+        }
+        const orderItems = cartItems.map(item => ({
+            productId: item._id,
+            quantity: item.quantity || 1,
+        }));
+        const payload = {
+            "distributorId": distributer,
+            "agentId": utils.agentId,
+            "items": orderItems,
+            "price": totalAmount.toString()
+        };
         try {
-            const orderData = {
-                items: cartItems,
-                totalAmount,
-            };
-            // Replace with actual API call
-            const response = await fetch('https://api.example.com/order', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(orderData),
-            });
-
-            if (response.ok) {
-                console.log('Order placed successfully');
+            const response = await postData('order/create', payload);
+            if (response.status) {
+                await AsyncStorage.removeItem('selectedItems');
+                setCartItems([]);
                 setShowModal(false);
-                // Optionally, reset the cart or navigate to another screen
-            } else {
-                console.log('Error placing order');
+                Alert.alert("Order Confirmed", "Your order has been successfully placed! Thank you for your purchase.");
             }
         } catch (error) {
-            console.error('Error during checkout:', error);
+            Alert.alert("Error", "Something went Wrong!");
+            console.error('Error placing the order:', error);
         }
     };
 
     const renderCartItem = ({ item }) => (
-        <View style={styles.cartItem}>
-            <Image source={{ uri: item.image }} style={styles.cartImage} />
+        <View key={item._id} style={styles.cartItem}>
+            <Image source={{ uri: item.images?.[0] }} style={styles.cartImage} />
             <View style={styles.cartContent}>
-                <Text style={styles.cartTitle} numberOfLines={1}>{item.title}</Text>
-                <Text style={styles.cartDescription} numberOfLines={1} >{item.description}</Text>
-                <Text style={styles.cartPrice}>${item.price}</Text>
+                <Text style={styles.cartTitle} numberOfLines={1}>{item.name}</Text>
+                <Text style={styles.cartDescription} numberOfLines={1} >{item.discription}</Text>
+                <Text style={styles.cartPrice}>₹{item.price}</Text>
 
                 <View style={styles.quantityControls}>
-                    <TouchableOpacity onPress={() => handleDecreaseQuantity(item.id)} style={styles.quantityButton}>
+                    <TouchableOpacity onPress={() => handleDecreaseQuantity(item._id)} style={styles.quantityButton}>
                         <Text style={styles.quantityButtonText}>-</Text>
                     </TouchableOpacity>
                     <Text style={styles.quantityText}>{item.quantity || 1}</Text>
-                    <TouchableOpacity onPress={() => handleIncreaseQuantity(item.id)} style={styles.quantityButton}>
+                    <TouchableOpacity onPress={() => handleIncreaseQuantity(item._id)} style={styles.quantityButton}>
                         <Text style={styles.quantityButtonText}>+</Text>
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity onPress={() => handleRemoveItem(item.id)} style={styles.removeButton}>
+                <TouchableOpacity onPress={() => handleRemoveItem(item._id)} style={styles.removeButton}>
                     <Text style={styles.removeButtonText}>Remove</Text>
                 </TouchableOpacity>
             </View>
@@ -158,7 +177,6 @@ const CartScreen = () => {
                 <FlatList
                     data={cartItems}
                     renderItem={renderCartItem}
-                    keyExtractor={(item) => item.id.toString()}
                     contentContainerStyle={styles.listContainer}
                 />
             )}
@@ -167,7 +185,7 @@ const CartScreen = () => {
             {cartItems.length > 0 && (
                 <>
                     <View style={styles.totalContainer}>
-                        <Text style={styles.totalText}>Total: ${totalAmount.toFixed(2)}</Text>
+                        <Text style={styles.totalText}>Total: ₹{totalAmount.toFixed(2)}</Text>
                     </View>
                     <View style={{ backgroundColor: "#fff", justifyContent: "center", alignItems: "center", padding: 10 }}>
                         <TouchableOpacity style={styles.checkoutButton} onPress={handleCheckout}>
@@ -181,22 +199,56 @@ const CartScreen = () => {
                 animationType="slide"
                 transparent={true}
                 onRequestClose={() => setShowModal(false)}
+                maxHeight={"90%"}
+                minWidth={"95%"}
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Order Summary</Text>
                         <ScrollView style={styles.scrollView}>
+                            {distributerList &&
+                                <View style={{ marginBottom: 15 }}>
+                                    <Select
+                                        selectedValue={distributer}
+                                        minWidth="100%"
+                                        accessibilityLabel={t('selectDistributor')}
+                                        placeholder={t('selectDistributor')}
+                                        _selectedItem={{
+                                            bg: "blue.400",
+                                            endIcon: <CheckIcon size="5" />,
+                                        }}
+                                        mt={1}
+                                        _light={{
+                                            borderColor: "#1230AE",
+                                            borderRadius: 40,
+                                            borderWidth: 1,
+                                        }}
+                                        _dark={{
+                                            borderColor: "#1230AE",
+                                            borderRadius: 40,
+                                            borderWidth: 1,
+                                        }}
+                                        onValueChange={itemValue => setDistributer(itemValue)}
+                                    >
+                                        {distributerList.map((stateItem) => (
+                                            <Select.Item label={stateItem.name} value={stateItem._id} key={stateItem._id} />
+                                        ))}
+                                    </Select>
+                                </View>
+                            }
                             {cartItems.map((item) => (
                                 <View key={item.id} style={styles.modalItem}>
-                                    <Text>{item.title} x {item.quantity}</Text>
-                                    <Text>${(item.price * item.quantity).toFixed(2)}</Text>
+                                    <Text>{item.name} x {item.quantity}</Text>
+                                    <Text>₹{(item.price * item.quantity).toFixed(2)}</Text>
                                 </View>
                             ))}
-                            <Text style={styles.modalTotal}>Total: ${totalAmount.toFixed(2)}</Text>
                         </ScrollView>
-                        <View style={styles.modalActions}>
-                            <Button color={'#1230AE'} title="Place Order" onPress={confirmCheckout} />
-                            <Button title="Cancel" color={'#1230AE'} onPress={() => setShowModal(false)} />
+                        <View>
+                            <Text style={styles.modalTotal}>Total: ₹{totalAmount.toFixed(2)}</Text>
+                            <View style={styles.modalActions}>
+                                <Button mode="contained" onPress={confirmCheckout} style={{ backgroundColor: "#1230AE", borderRadius: 25 }} >Place Order</Button>
+                                <Button mode="contained" onPress={() => setShowModal(false)} style={{ backgroundColor: "#1230AE", borderRadius: 25 }} >Cancel</Button>
+                            </View>
                         </View>
                     </View>
                 </View>
@@ -320,7 +372,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.5)', // Slightly transparent background
     },
     modalContent: {
-        width: '80%',
+        width: '90%',
         backgroundColor: 'white',
         padding: 20,
         borderRadius: 10,

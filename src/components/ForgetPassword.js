@@ -1,18 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Alert } from 'react-native';
 import { Navigation } from 'react-native-navigation';
 import { NativeBaseProvider, Avatar, Select, CheckIcon, Divider } from "native-base";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-
+import { i18n } from '../services/i18n';
+import { position } from 'native-base/lib/typescript/theme/styled-system';
+import { postData } from '../services/apiService';
+import Spinner from 'react-native-loading-spinner-overlay';
 const ForgetPassScreen = ({ componentId }) => {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const [phone, setPhone] = useState('');
-    const handleOpt = () => {
-        if(!phone){
-            alert("Please fill the phone number!");
-        }else{
-            console.log("fghfhgfhg jhjhm");
+    const [loading, setLoading] = useState(false);
+
+    const handleOpt = async () => {
+        if (!phone) {
+            Alert.alert(t("Info"), t("Enter_Phone_Number_To_Get_New_Password"), [
+                {
+                    text: t("Ok"),
+                }
+            ])
+            return;
+        }
+        try {
+            const payload = {
+                "phone": phone
+            }
+            setLoading(true);
+            const response = await postData('user/forgot-password', payload);
+            setLoading(false);
+            if (response.status == 200) {
+                Alert.alert(t("Password_Updated"), `${t("Password_Updated_Message")} ${response?.data?.data?.newPassword}`, [
+                    {
+                        text: t("Ok"),
+                    }
+                ])
+            }
+        } catch (error) {
+            setLoading(false);
+            Alert.alert(t("Info"), t("An_error_occurred"), [
+                {
+                    text: t("Ok"),
+                }
+            ])
+        } finally {
+            setLoading(false);
         }
     }
     return (
@@ -37,7 +69,7 @@ const ForgetPassScreen = ({ componentId }) => {
                                 placeholderTextColor="#AAAAAA"
                             />
                             <TouchableOpacity onPress={handleOpt} style={styles.button}>
-                                <Text style={styles.buttonText}>{t("Get OTP")}</Text>
+                                <Text style={styles.buttonText}>{t("Get_OTP")}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={() => {
                                 Navigation.pop(componentId);
@@ -45,6 +77,7 @@ const ForgetPassScreen = ({ componentId }) => {
                                 <Text style={styles.forgetbuttonText}>{t("back")}</Text>
                             </TouchableOpacity>
                         </View>
+                        <Spinner visible={loading} textContent={t("Loading")} textStyle={{ color: "#fff" }} />
                     </View>
                 </ScrollView>
             </NativeBaseProvider>

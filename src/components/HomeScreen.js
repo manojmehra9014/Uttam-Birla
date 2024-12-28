@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, FlatList, ActivityIndicator, Modal, TouchableOpacity } from 'react-native';
-import Toast from 'react-native-toast-message'; // Import Toast
-import axios from 'axios';
+import { View, Text, Image, StyleSheet, FlatList, ActivityIndicator, Modal, TouchableOpacity, Alert } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Avatar, Divider } from "native-base";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 import { NativeBaseProvider } from "native-base";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-
-
+import { fetchData, postData, getData } from '../services/apiService';
+import utils from '../services/utils';
+import Spinner from 'react-native-loading-spinner-overlay';
 const HomeScreen = () => {
     const { t } = useTranslation();
     const [items, setItems] = useState([]);
@@ -16,24 +16,39 @@ const HomeScreen = () => {
     const [selectedItems, setSelectedItems] = useState([]);
     const [selectedImage, setSelectedImage] = useState(null);
     const [imagePrev, setShowImagePreview] = useState(false);
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(10);
+    const [userType, setUserType] = useState('');
 
     useEffect(() => {
-        // Fetch items from the API
         const fetchItems = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get('https://fakestoreapi.com/products'); // Sample API endpoint
-                setItems(response.data);
+                const payload = {
+                    "page": page,
+                    "limit": limit,
+                    "sortOrder": "desc",
+                    "sortBy": "createdAt",
+                };
+                const response = await getData('product/list', payload);
+                if (page === 1) {
+                    setItems(response.data.data);
+                } else {
+                    setItems(prevItems => [...prevItems, ...response.data]);
+                }
             } catch (error) {
                 console.error('Error fetching items:', error);
+                setLoading(false);
+                Alert.alert(t("Info"), t("An_error_occurred"), [
+                    {
+                        text: t("Ok"),
+                    }
+                ])
             } finally {
                 setLoading(false);
             }
         };
-
         fetchItems();
-
-        // Load selected items from AsyncStorage
         const loadSelectedItems = async () => {
             try {
                 const savedItems = await AsyncStorage.getItem('selectedItems');
@@ -44,8 +59,13 @@ const HomeScreen = () => {
                 console.error('Error loading selected items:', error);
             }
         };
-
         loadSelectedItems();
+    }, [page]);
+    useEffect(() => {
+        const fetchUserType = () => {
+            setUserType(utils.userType || 2);
+        };
+        fetchUserType();
     }, []);
 
     const handleImagePress = (image) => {
@@ -54,25 +74,25 @@ const HomeScreen = () => {
     };
 
     const handleItemPress = async (item) => {
-        const isSelected = selectedItems.find(selected => selected.id === item.id);
+        const isSelected = selectedItems.some(selected => selected._id === item._id);
         let updatedSelectedItems;
+
         if (isSelected) {
-            // Remove item from the selected list
-            updatedSelectedItems = selectedItems.filter(selected => selected.id !== item.id);
+            updatedSelectedItems = selectedItems.filter(selected => selected._id !== item._id);
             Toast.show({
                 type: 'info',
                 text1: 'Item Removed',
-                text2: `${item.title} has been removed from your selection.`,
+                text2: `${item.name} has been removed from your selection.`,
             });
         } else {
-            // Add item to the selected list
             updatedSelectedItems = [...selectedItems, item];
             Toast.show({
                 type: 'success',
                 text1: 'Item Added',
-                text2: `${item.title} has been added to your selection.`,
+                text2: `${item.name} has been added to your selection.`,
             });
         }
+
         setSelectedItems(updatedSelectedItems);
         try {
             await AsyncStorage.setItem('selectedItems', JSON.stringify(updatedSelectedItems));
@@ -86,26 +106,36 @@ const HomeScreen = () => {
     };
 
     const renderItem = ({ item }) => {
-        const isSelected = selectedItems.find(selected => selected.id === item.id);
+        const isSelected = selectedItems.some(selected => selected._id === item._id);
         return (
             <TouchableOpacity
                 style={[styles.card, isSelected && styles.selectedCard]}
-                onPress={() => handleItemPress(item)}
+                onPress={() => { (utils.userType == 3 || utils.userType == 4) && handleItemPress(item) }}
             >
-                <TouchableOpacity
-                    style={{ alignItems: "center", justifyContent: "center" }}
-                    onPress={() => handleImagePress(item.image)}
-                >
-                    <Image source={{ uri: item.image }} style={styles.image} />
-                </TouchableOpacity>
+                <View style={{ alignItems: "center", justifyContent: "center" }}>
+                    <TouchableOpacity onPress={() => { handleImagePress(item?.images?.[0]) }}>
+                        <Image
+                            source={{
+                                uri: item?.images?.[0] || "https://thumbs.dreamstime.com/b/no-image-available-icon-vector-illustration-flat-design-140476186.jpg"
+                            }}
+                            style={styles.image}
+                        />
+                    </TouchableOpacity>
+                </View>
                 <View style={styles.content}>
-                    <Text numberOfLines={2} style={styles.name}>{item.title}</Text>
-                    <Text numberOfLines={2} style={styles.description}>{item.description}</Text>
-                    <Text style={styles.price}>${item.price}</Text>
-                    <Text style={styles.available}>{item.available ? 'In Stock' : 'Out of Stock'}</Text>
+                    <Text numberOfLines={2} style={styles.name}>{item?.name}</Text>
+                    <Text numberOfLines={2} style={styles.description}>{item?.discription}</Text>
+                    <Text style={styles.price}>₹{item?.price}</Text>
+                    <Text style={styles.available}>{item.active ? 'In Stock' : 'Out of Stock'}</Text>
                 </View>
             </TouchableOpacity>
         );
+    };
+
+    const handleLoadMore = () => {
+        if (!loading) {
+            setPage(prevPage => prevPage + 1);
+        }
     };
 
     return (
@@ -127,14 +157,16 @@ const HomeScreen = () => {
                     </View>
                     <Divider />
 
-                    {loading ? (
-                        <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
+                    {loading && page === 1 ? (
+                        <Spinner visible={true} textContent={t("Loading")} textStyle={{ color: "#fff" }} />
                     ) : (
                         <FlatList
                             data={items}
                             renderItem={renderItem}
-                            keyExtractor={(item) => item.id.toString()}
                             contentContainerStyle={styles.listContainer}
+                            onEndReached={() => { handleLoadMore }}
+                            onEndReachedThreshold={0.5}
+                            ListFooterComponent={loading ? <ActivityIndicator size="large" color="#0000ff" /> : null}
                         />
                     )}
 
@@ -159,7 +191,7 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#fff',
     },
     loader: {
         flex: 1,

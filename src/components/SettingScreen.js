@@ -1,10 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Avatar, Divider } from 'native-base';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Navigation } from 'react-native-navigation';
+import { I18nextProvider, useTranslation } from 'react-i18next';
+import i18n from '../services/i18n';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const SettingsScreen = ({ componentId }) => {
+    const [language, setLanguage] = useState('en');
+    const { t } = useTranslation();
+
+    useEffect(() => {
+        const fetchLanguage = async () => {
+            try {
+                const savedLanguage = await AsyncStorage.getItem('selectedLanguage');
+                if (savedLanguage) {
+                    setLanguage(savedLanguage);
+                }
+            } catch (error) {
+                console.error('Error fetching language from AsyncStorage', error);
+            }
+        };
+        fetchLanguage();
+    }, []);
+
     const handleLogout = async () => {
         try {
             await AsyncStorage.removeItem('selectedItems');
@@ -30,7 +50,13 @@ const SettingsScreen = ({ componentId }) => {
     };
 
     const openHelpSection = () => {
-        alert("Contect to Admin or Contect to nearby Store - emailID, PhoneNumber");
+        Alert.alert(
+            t("Info"),
+            t("Please_contact_the_admin_or_visit_the_nearest_store"),
+            [
+                { text: t("Ok") }
+            ]
+        );
     };
 
     const openOtherSection = () => {
@@ -43,16 +69,15 @@ const SettingsScreen = ({ componentId }) => {
 
     const showLogoutModal = () => (
         Alert.alert(
-            'Logout',
-            'Are you sure you want to logout?',
+            t('Logout'),
+            t('logoutContinew'),
             [
                 {
-                    text: 'Cancel',
-                    onPress: () => console.log('Cancel pressed'),
+                    text: t('Cancel'),
                     style: 'cancel',
                 },
                 {
-                    text: 'OK',
+                    text: t('Ok'),
                     onPress: async () => {
                         handleLogout()
                     },
@@ -60,30 +85,62 @@ const SettingsScreen = ({ componentId }) => {
             ],
         ));
 
+    const changeLanguage = async (language) => {
+        i18n.changeLanguage(language);
+        setLanguage(language);
+        try {
+            await AsyncStorage.setItem('selectedLanguage', language);
+        } catch (error) {
+            console.error('Error saving language to AsyncStorage', error);
+        }
+    };
+
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                {/* Avatar at the top center */}
-                <Avatar bg="blue.500" size="xl" source={require('../assets/image/painter.png')} />
-                <Text style={styles.headerText}>Settings</Text>
-            </View>
+        <I18nextProvider i18n={i18n}>
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    {/* Avatar at the top center */}
+                    <Avatar bg="blue.500" size="xl" source={require('../assets/image/painter.png')} />
+                    <Text style={styles.headerText}>{t('Setting')}</Text>
+                </View>
 
-            <Divider />
-
-            <View style={styles.section}>
-                <TouchableOpacity style={styles.sectionButton} onPress={() => showLogoutModal()}>
-                    <Text style={styles.sectionText}>Logout</Text>
-                </TouchableOpacity>
                 <Divider />
-            </View>
 
-            <View style={styles.section}>
-                <TouchableOpacity style={styles.sectionButton} onPress={openHelpSection}>
-                    <Text style={styles.sectionText}>Help</Text>
-                </TouchableOpacity>
-                <Divider />
+                <View >
+                    <TouchableOpacity
+                        style={styles.languageIconContainer}
+                        onPress={() => changeLanguage(language === 'en' ? 'hi' : 'en')}
+                    >
+                        <View style={{ flex: 0.4, justifyContent: "center", alignItems: "center" }}>
+                            <Icon name="language" size={40} color="#1230AE" />
+                        </View>
+                        <View style={{ flex: 0.6, justifyContent: "center", alignItems: "center" }}>
+                            <Text style={styles.languageText}>{language === 'en' ? 'English' : 'हिन्दी'}</Text>
+                        </View>
+                    </TouchableOpacity>
+                    <Divider />
+                </View>
+
+                <View style={styles.section}>
+                    <TouchableOpacity style={styles.sectionButton} onPress={() => showLogoutModal()}>
+                        <Text style={styles.sectionText}>{t("Logout")}</Text>
+                    </TouchableOpacity>
+                    <Divider />
+                </View>
+
+                <View style={styles.section}>
+                    <TouchableOpacity style={styles.sectionButton} onPress={openHelpSection}>
+                        <Text style={styles.sectionText}>{t('Help')}</Text>
+                    </TouchableOpacity>
+                    <Divider />
+                </View>
+
+
+
+
             </View>
-        </View>
+        </I18nextProvider>
+
     );
 };
 
@@ -148,6 +205,13 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         width: '100%',
     },
+    languageIconContainer: {
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        justifyContent: "space-around",
+        padding: 10
+    }
 });
 
 export default SettingsScreen;
