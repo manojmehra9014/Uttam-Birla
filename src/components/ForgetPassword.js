@@ -5,9 +5,9 @@ import { NativeBaseProvider, Avatar, Select, CheckIcon, Divider } from "native-b
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { i18n } from '../services/i18n';
-import { position } from 'native-base/lib/typescript/theme/styled-system';
-import { postData } from '../services/apiService';
 import Spinner from 'react-native-loading-spinner-overlay';
+import utils from '../services/utils';
+import axios from 'axios';
 const ForgetPassScreen = ({ componentId }) => {
     const { t } = useTranslation();
     const [phone, setPhone] = useState('');
@@ -22,12 +22,26 @@ const ForgetPassScreen = ({ componentId }) => {
             ])
             return;
         }
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(phone)) {
+            Alert.alert(t("Info"), t("Invalid_Phone_Number_Format"), [
+                {
+                    text: t("Ok"),
+                }
+            ]);
+            return;
+        }
         try {
             const payload = {
                 "phone": phone
             }
             setLoading(true);
-            const response = await postData('user/forgot-password', payload);
+            const response = await axios.post('https://api.uttambirla.com/user/forgot-password', payload, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${utils.token}`,
+                }
+            });
             setLoading(false);
             if (response.status == 200) {
                 Alert.alert(t("Password_Updated"), `${t("Password_Updated_Message")} ${response?.data?.data?.newPassword}`, [
@@ -35,6 +49,12 @@ const ForgetPassScreen = ({ componentId }) => {
                         text: t("Ok"),
                     }
                 ])
+            } else {
+                Alert.alert(t("Info"), t("An_error_occurred"), [
+                    {
+                        text: t("Ok"),
+                    }
+                ]);
             }
         } catch (error) {
             setLoading(false);

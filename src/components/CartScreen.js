@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { fetchData, postData, getData } from '../services/apiService';
 import utils from '../services/utils';
 import { Button } from 'react-native-paper';
+import axios from 'axios';
 
 const CartScreen = () => {
     const { t } = useTranslation();
@@ -17,7 +18,26 @@ const CartScreen = () => {
     const [distributer, setDistributer] = useState(null);
     const [distributerList, setDistributerList] = useState(null);
 
-    useEffect(async () => {
+    const fetchDistributerListData = async () => {
+        try {
+            const response = await axios.get('https://api.uttambirla.com/user/distributer/list', {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${utils.token}`,
+                }
+            });
+            console.log(response.data.data);
+            setDistributerList(response.data.data);
+        } catch (error) {
+            Alert.alert(t("Info"), t("An_error_occurred"), [
+                {
+                    text: t("Ok"),
+                }
+            ])
+        }
+    }
+
+    useEffect(() => {
         const fetchCartItems = async () => {
             try {
                 const savedItems = await AsyncStorage.getItem('selectedItems');
@@ -37,21 +57,13 @@ const CartScreen = () => {
                 setLoading(false);
             }
         };
-        const fetchDistributerListData = async () => {
-            try {
-                const response = await getData('user/distributer/list');
-                console.log(response.data.data);
-                setDistributerList(response.data.data);
-            } catch (error) {
-                Alert.alert(t("Info"), t("An_error_occurred"), [
-                    {
-                        text: t("Ok"),
-                    }
-                ])
-            }
-        }
+
+        const fetchDistributerListDataWrapper = async () => {
+            await fetchDistributerListData();
+        };
+
         fetchCartItems();
-        fetchDistributerListData();
+        fetchDistributerListDataWrapper();
     }, []);
 
     const calculateTotal = (items) => {
@@ -95,6 +107,35 @@ const CartScreen = () => {
         setShowModal(true);
     };
 
+    const fetchDistributerListData2 = async (payload) => {
+        try {
+            const response = await axios.post('https://api.uttambirla.com/order/create', payload, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${utils.token}`,
+                }
+            });
+            if (response.status) {
+                await AsyncStorage.removeItem('selectedItems');
+                setCartItems([]);
+                setShowModal(false);
+                Alert.alert("Order Confirmed", "Your order has been successfully placed! Thank you for your purchase.");
+            } else {
+                Alert.alert(t("Info"), t("An_error_occurred"), [
+                    {
+                        text: t("Ok"),
+                    }
+                ])
+            }
+        } catch (error) {
+            Alert.alert(t("Info"), t("An_error_occurred"), [
+                {
+                    text: t("Ok"),
+                }
+            ])
+        }
+    }
+
     const confirmCheckout = async () => {
         if (!distributer || !utils.agentId) {
             Alert.alert("Info", "Please select all required field!");
@@ -104,20 +145,15 @@ const CartScreen = () => {
             productId: item._id,
             quantity: item.quantity || 1,
         }));
+        const agentId = utils.agentId
         const payload = {
             "distributorId": distributer,
-            "agentId": utils.agentId,
+            "agentId": agentId,
             "items": orderItems,
             "price": totalAmount.toString()
-        };
+        }
         try {
-            const response = await postData('order/create', payload);
-            if (response.status) {
-                await AsyncStorage.removeItem('selectedItems');
-                setCartItems([]);
-                setShowModal(false);
-                Alert.alert("Order Confirmed", "Your order has been successfully placed! Thank you for your purchase.");
-            }
+            fetchDistributerListData2(payload);
         } catch (error) {
             Alert.alert("Error", "Something went Wrong!");
             console.error('Error placing the order:', error);

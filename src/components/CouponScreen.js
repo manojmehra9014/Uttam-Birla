@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, Modal, ScrollView, KeyboardAvoidingView } from 'react-native';
 import { NativeBaseProvider, Radio } from "native-base";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -6,9 +6,12 @@ import Spinner from 'react-native-loading-spinner-overlay';
 import Icons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { postData } from '../services/apiService';
 import { useTranslation } from 'react-i18next';
+import utils from '../services/utils';
+import axios from 'axios';
+const debounce = require('lodash.debounce');
 const CouponScreen = () => {
     const [couponCode, setCouponCode] = useState('');
-    const [couponVerified, setCouponVerified] = useState(null); // null = not checked, true = valid, false = invalid
+    const [couponVerified, setCouponVerified] = useState(null); 
     const [account, setAccount] = useState('');
     const [ifsc, setifsc] = useState('');
     const [upiId, setUpiId] = useState('');
@@ -18,40 +21,42 @@ const CouponScreen = () => {
     const [paymentType, setPaymentType] = useState('upi');
     const { t } = useTranslation();
 
-    let timeoutId;
+    const debouncedVerifyCouponCode = useCallback(
+        debounce(async (code) => {
+            if (code) {
+                try {
+                    showSpinner(true);
+                    const payload = {
+                        "coupanCode": code
+                    }
+                    const response = await axios.post('https://api.uttambirla.com/coupan/verify', payload, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${utils.token}`,
+                        },
+                    });
+                    showSpinner(false);
+                    setCouponVerified(response ? true : false);
+                } catch (error) {
+                    setCouponVerified(false);
+                    console.log(error.response);
+                    Alert.alert(t("Info"), t(error.response.data.error), [{ text: t("Ok") }]);
+                } finally {
+                    showSpinner(false);
+                }
+            }
+        }, 1500),
+        []
+    );
 
     useEffect(() => {
         if (couponCode) {
-            timeoutId = setTimeout(() => {
-                verifyCouponCode(couponCode);
-            }, 1000);
+            debouncedVerifyCouponCode(couponCode);
         } else {
             setCouponVerified(null);
         }
-        return () => clearTimeout(timeoutId);
-    }, [couponCode]);
-
-    const verifyCouponCode = async (code) => {
-        if (code) {
-            try {
-                const payload = {
-                    "coupanCode": code,
-                };
-                const response = await postData('coupan/verify', payload);
-                if (response) {
-                    setCouponVerified(true);
-                } else {
-                    setCouponVerified(false);
-                }
-            } catch {
-                Alert.alert(t("Info"), t("An_error_occurred"), [
-                    {
-                        text: t("Ok"),
-                    }
-                ])
-            }
-        }
-    };
+        return () => debouncedVerifyCouponCode.cancel();
+    }, [couponCode, debouncedVerifyCouponCode]);
 
     const validateInputs = () => {
         if (!couponCode || !phone || (paymentType === 'bank' ? !account || !ifsc : !upiId)) {
@@ -76,29 +81,46 @@ const CouponScreen = () => {
                     : { "accountNo": account, "ifscCode": ifsc })
             };
             showSpinner(true);
-            const response = await postData('payout/create', payload);
+            console.log(payload);
+            const response = await axios.post('https://api.uttambirla.com/payout/create', payload, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${utils.token}`,
+                }
+            });
+            console.log(response);
+            if (response.status) {
+                setIsModalVisible(false);
+                showSpinner(false);
+                Alert.alert("Success", "Coupon submitted successfully!", [
+                    {
+                        text: "OK",
+                        onPress: () => {
+                            setCouponCode('');
+                            setCouponVerified(null);
+                            setAccount('');
+                            setifsc('');
+                            setUpiId('');
+                            setPhone('');
+                            setPaymentType('');
+                        }
+                    }
+                ]);
+            } else {
+                setIsModalVisible(false);
+                showSpinner(false);
+            }
+
+        } catch (error) {
+            console.log(error.response);
+            Alert.alert(t("Info"), t(error.response.data.message), [
+                {
+                    text: t("Ok"),
+                }
+            ])
+        } finally {
             setIsModalVisible(false);
             showSpinner(false);
-            Alert.alert("Success", "Coupon submitted successfully!", [
-                {
-                    text: "OK",
-                    onPress: () => {
-                        setCouponCode('');
-                        setCouponVerified(null);
-                        setAccount('');
-                        setifsc('');
-                        setUpiId('');
-                        setPhone('');
-                        setPaymentType('');
-                    }
-                }
-            ]);
-        } catch {
-            // Alert.alert(t("Info"), t("An_error_occurred"), [
-            //     {
-            //         text: t("Ok"),
-            //     }
-            // ])
         }
 
     };
@@ -121,151 +143,153 @@ const CouponScreen = () => {
     return (
         <SafeAreaProvider>
             <NativeBaseProvider>
-                <View style={styles.container}>
-                    <View style={styles.containerImage}>
-                        <Image
-                            source={require('../assets/image/logo.png')}
-                            style={styles.image}
-                            resizeMode="contain"
-                        />
-                    </View>
-                    <View style={{ alignItems: "center", justifyContent: "center", marginBottom: 30 }}>
-                        <Text style={{ fontSize: 22, color: "#1230AE", fontWeight: "800" }}>{t('CouponWithdrawal')}</Text>
-                    </View>
-                    <View style={styles.formContainer}>
-                        <View style={styles.inputContainer}>
-                            <TextInput
-                                style={styles.input}
-                                placeholder={t("Enter_Coupon_Code")}
-                                value={couponCode}
-                                onChangeText={setCouponCode}
-                                placeholderTextColor="#AAAAAA"
+                <ScrollView>
+                    <View style={styles.container}>
+                        <View style={styles.containerImage}>
+                            <Image
+                                source={require('../assets/image/logo.png')}
+                                style={styles.image}
+                                resizeMode="contain"
                             />
-                            {couponVerified !== null && (
-                                <Icons
-                                    name={couponVerified ? "check-circle" : "close-circle-outline"}
-                                    size={24}
-                                    color={couponVerified ? "green" : "red"}
-                                    style={styles.icon}
-                                />
-                            )}
                         </View>
-                        <View>
+                        <View style={{ alignItems: "center", justifyContent: "center", marginBottom: 30 }}>
+                            <Text style={{ fontSize: 22, color: "#1230AE", fontWeight: "800" }}>{t('CouponWithdrawal')}</Text>
+                        </View>
+                        <View style={styles.formContainer}>
+                            <View style={styles.inputContainer}>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder={t("Enter_Coupon_Code")}
+                                    value={couponCode}
+                                    onChangeText={setCouponCode}
+                                    placeholderTextColor="#AAAAAA"
+                                />
+                                {couponVerified !== null && (
+                                    <Icons
+                                        name={couponVerified ? "check-circle" : "close-circle-outline"}
+                                        size={24}
+                                        color={couponVerified ? "green" : "red"}
+                                        style={styles.icon}
+                                    />
+                                )}
+                            </View>
+                            <View>
+                                {couponVerified === true && (
+                                    <>
+                                        <View style={[{
+                                            paddingBottom: 10,
+                                            width: "100%",
+                                            backgroundColor: '#fff',
+                                            flexDirection: "row"
+                                        }]}>
+                                            <TouchableOpacity
+                                                style={buttonStyle('upi')}
+                                                onPress={() => setPaymentType('upi')}
+                                            >
+                                                <Text style={textStyle('upi')}>{t("UPI")}</Text>
+                                            </TouchableOpacity>
+
+                                            <TouchableOpacity
+                                                style={buttonStyle('bank')}
+                                                onPress={() => setPaymentType('bank')}
+                                            >
+                                                <Text style={textStyle('bank')}>{t("BankTransfer")}</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </>
+
+                                )}
+                            </View>
                             {couponVerified === true && (
                                 <>
-                                    <View style={[{
-                                        paddingBottom: 10,
-                                        width: "100%",
-                                        backgroundColor: '#fff',
-                                        flexDirection: "row"
-                                    }]}>
-                                        <TouchableOpacity
-                                            style={buttonStyle('upi')}
-                                            onPress={() => setPaymentType('upi')}
-                                        >
-                                            <Text style={textStyle('upi')}>{t("UPI")}</Text>
-                                        </TouchableOpacity>
-
-                                        <TouchableOpacity
-                                            style={buttonStyle('bank')}
-                                            onPress={() => setPaymentType('bank')}
-                                        >
-                                            <Text style={textStyle('bank')}>{t("BankTransfer")}</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                </>
-
-                            )}
-                        </View>
-                        {couponVerified === true && (
-                            <>
 
 
-                                {paymentType === 'upi' && (
+                                    {paymentType === 'upi' && (
+                                        <View style={styles.inputContainer}>
+                                            <TextInput
+                                                style={styles.input}
+                                                placeholder={t('Enter_UPI_Id')}
+                                                value={upiId}
+                                                onChangeText={setUpiId}
+                                                placeholderTextColor="#AAAAAA"
+                                            />
+                                        </View>
+                                    )}
+                                    {paymentType === 'bank' && (
+                                        <>
+                                            <View style={styles.inputContainer}>
+                                                <TextInput
+                                                    style={styles.input}
+                                                    placeholder={t("Enter_Bank_Account_Number")}
+                                                    value={account}
+                                                    onChangeText={setAccount}
+                                                    placeholderTextColor="#AAAAAA"
+                                                />
+                                            </View>
+                                            <View style={styles.inputContainer}>
+                                                <TextInput
+                                                    style={styles.input}
+                                                    placeholder={t("Enter_IFSC_Code")}
+                                                    value={ifsc}
+                                                    onChangeText={setifsc}
+                                                    placeholderTextColor="#AAAAAA"
+                                                />
+                                            </View>
+                                        </>
+                                    )}
                                     <View style={styles.inputContainer}>
                                         <TextInput
                                             style={styles.input}
-                                            placeholder={t('Enter_UPI_Id')}
-                                            value={upiId}
-                                            onChangeText={setUpiId}
+                                            placeholder={t("Enter_Phone_Number")}
+                                            value={phone}
+                                            onChangeText={setPhone}
+                                            keyboardType="phone-pad"
                                             placeholderTextColor="#AAAAAA"
                                         />
                                     </View>
-                                )}
-                                {paymentType === 'bank' && (
-                                    <>
-                                        <View style={styles.inputContainer}>
-                                            <TextInput
-                                                style={styles.input}
-                                                placeholder={t("Enter_Bank_Account_Number")}
-                                                value={account}
-                                                onChangeText={setAccount}
-                                                placeholderTextColor="#AAAAAA"
-                                            />
-                                        </View>
-                                        <View style={styles.inputContainer}>
-                                            <TextInput
-                                                style={styles.input}
-                                                placeholder={t("Enter_IFSC_Code")}
-                                                value={ifsc}
-                                                onChangeText={setifsc}
-                                                placeholderTextColor="#AAAAAA"
-                                            />
-                                        </View>
-                                    </>
-                                )}
-                                <View style={styles.inputContainer}>
-                                    <TextInput
-                                        style={styles.input}
-                                        placeholder={t("Enter_Phone_Number")}
-                                        value={phone}
-                                        onChangeText={setPhone}
-                                        keyboardType="phone-pad"
-                                        placeholderTextColor="#AAAAAA"
-                                    />
-                                </View>
-                            </>
-                        )}
+                                </>
+                            )}
 
-                        {couponVerified &&
-                            <TouchableOpacity onPress={handleSubmit} style={styles.button}>
-                                <Text style={styles.buttonText}>{t("Submit")}</Text>
-                            </TouchableOpacity>
-                        }
-                    </View>
-                    <Spinner visible={spinner} textContent={t("Submitting")} textStyle={{ color: "#fff" }} />
-                    <Modal
-                        visible={isModalVisible}
-                        transparent={true}
-                        animationType="slide"
-                        onRequestClose={() => setIsModalVisible(false)}
-                    >
-                        <View style={styles.modalContainer}>
-                            <View style={styles.modalContent}>
-                                <Text style={styles.modalTitle}>{t("Review_Details")}</Text>
-                                <Text>Coupon Code: {couponCode}</Text>
-                                <Text>Payment Type: {paymentType}</Text>
-                                {paymentType === 'upi' && <Text>UPI Id: {upiId}</Text>}
-                                {paymentType === 'bank' && <Text>Bank Account: {account}</Text>}
-                                <Text>Phone: {phone}</Text>
-                                <View style={styles.modalActions}>
-                                    <TouchableOpacity
-                                        style={styles.modalButton}
-                                        onPress={() => setIsModalVisible(false)}
-                                    >
-                                        <Text style={styles.modalButtonText}>Edit</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={[styles.modalButton, styles.modalButtonConfirm]}
-                                        onPress={confirmSubmission}
-                                    >
-                                        <Text style={styles.modalButtonText}>Confirm</Text>
-                                    </TouchableOpacity>
+                            {couponVerified &&
+                                <TouchableOpacity onPress={handleSubmit} style={styles.button}>
+                                    <Text style={styles.buttonText}>{t("Submit")}</Text>
+                                </TouchableOpacity>
+                            }
+                        </View>
+                        <Spinner visible={spinner} textContent={t("Submitting")} textStyle={{ color: "#fff" }} />
+                        <Modal
+                            visible={isModalVisible}
+                            transparent={true}
+                            animationType="slide"
+                            onRequestClose={() => setIsModalVisible(false)}
+                        >
+                            <View style={styles.modalContainer}>
+                                <View style={styles.modalContent}>
+                                    <Text style={styles.modalTitle}>{t("Review_Details")}</Text>
+                                    <Text>Coupon Code: {couponCode}</Text>
+                                    <Text>Payment Type: {paymentType}</Text>
+                                    {paymentType === 'upi' && <Text>UPI Id: {upiId}</Text>}
+                                    {paymentType === 'bank' && <Text>Bank Account: {account}</Text>}
+                                    <Text>Phone: {phone}</Text>
+                                    <View style={styles.modalActions}>
+                                        <TouchableOpacity
+                                            style={styles.modalButton}
+                                            onPress={() => setIsModalVisible(false)}
+                                        >
+                                            <Text style={styles.modalButtonText}>Edit</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.modalButton, styles.modalButtonConfirm]}
+                                            onPress={confirmSubmission}
+                                        >
+                                            <Text style={styles.modalButtonText}>Confirm</Text>
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
                             </View>
-                        </View>
-                    </Modal>
-                </View>
+                        </Modal>
+                    </View>
+                </ScrollView>
             </NativeBaseProvider>
         </SafeAreaProvider>
     );

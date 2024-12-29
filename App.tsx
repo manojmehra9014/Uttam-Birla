@@ -1,17 +1,16 @@
 import { AppRegistry } from 'react-native';
 import { Navigation } from 'react-native-navigation';
 import { name as appName } from './app.json';
-import { checkAuthentication } from './src/services/authService'; // Import authentication check service
-// Disable font scaling globally for all Text and TextInput components
 
-// Import your screens
 import LoginScreen from './src/components/LoginScreen';
 import SignUpScreen from './src/components/SignUpScreen';
 import HomeScreen from './src/components/HomeScreen';
 import ForgetPassScreen from './src/components/ForgetPassword';
 import NavigationController from './src/components/NavigationController';
+import CartScreen from './src/components/CartScreen';
+import CouponScreen from './src/components/CouponScreen';
+import SettingsScreen from './src/components/SettingScreen';
 
-// Set default options for navigation
 Navigation.setDefaultOptions({
   topBar: {
     visible: false, // Hide top bar for all screens
@@ -25,57 +24,25 @@ Navigation.registerComponent('SignUpScreen', () => SignUpScreen);
 Navigation.registerComponent('HomeScreen', () => HomeScreen);
 Navigation.registerComponent('ForgetPassScreen', () => ForgetPassScreen);
 Navigation.registerComponent('NavigationController', () => NavigationController);
+Navigation.registerComponent('CartScreen', () => CartScreen);
+Navigation.registerComponent('CouponScreen', () => CouponScreen);
+Navigation.registerComponent('SettingsScreen', () => SettingsScreen);
 
 // Function to check authentication status and navigate accordingly
 const initializeApp = async () => {
-  const isAuthenticated = await checkAuthentication();
-  // console.log(isAuthenticated);
-  // Set the root navigation based on authentication status
-  if (false) {
-    // If authenticated, show HomeScreen
-    Navigation.setRoot({
-      root: {
-        bottomTabs: {
-          children: [
-            {
-              stack: {
-                children: [
-                  {
-                    component: {
-                      name: 'HomeScreen',
-                    },
-                  },
-                ],
-                options: {
-                  bottomTab: {
-                    text: 'Home',
-                  },
-                },
-              },
+  Navigation.setRoot({
+    root: {
+      stack: {
+        children: [
+          {
+            component: {
+              name: 'LoginScreen',
             },
-          ],
-        },
+          },
+        ],
       },
-    });
-  } else {
-    Navigation.setRoot({
-      root: {
-        stack: {
-          children: [
-            {
-              component: {
-                name: 'LoginScreen',
-              },
-            },
-          ],
-        },
-      },
-    });
-  }
+    },
+  });
 };
-
-// Initialize the app
 initializeApp();
-
-// Register the app
 AppRegistry.registerComponent(appName, () => LoginScreen); // Register the LoginScreen as the root component

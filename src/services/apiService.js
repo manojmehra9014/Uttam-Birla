@@ -32,21 +32,16 @@ export const postData = async (endpoint, payload) => {
     try {
         console.log('Request URL:', apiClient.defaults.baseURL + endpoint);
         console.log('Payload:', JSON.stringify(payload));
+
         const response = await apiClient.post(endpoint, payload);
+
+        console.log('Response:', response);
         return response;
     } catch (error) {
-        if (error.response) {
-            const { data, status } = error.response;
-            console.error('Error Response:', data);
-            console.error('Status Code:', status);
-            Alert.alert(t("Info"), t("Please_fill_all_required_fields_correctly_to_proceed"), [
-                {
-                    text: t("Ok"),
-                }
-            ]);
-        } else {
-            console.error('Error:', error.message);
+        if (error) {
+            console.error('Error Response:', error);
         }
+        throw error;
     }
 };
 

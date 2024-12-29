@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, FlatList, ActivityIndicator, Modal, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, FlatList, ActivityIndicator, Modal, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { Avatar, Divider } from "native-base";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
-import { NativeBaseProvider } from "native-base";
+import { NativeBaseProvider, Button } from "native-base";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { fetchData, postData, getData } from '../services/apiService';
 import utils from '../services/utils';
 import Spinner from 'react-native-loading-spinner-overlay';
+import axios from 'axios';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 const HomeScreen = () => {
     const { t } = useTranslation();
     const [items, setItems] = useState([]);
@@ -19,18 +21,27 @@ const HomeScreen = () => {
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
     const [userType, setUserType] = useState('');
+    const [showModal, setShowModal] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [IsAlredySelected, setIsAlredySelected] = useState(false);
 
     useEffect(() => {
         const fetchItems = async () => {
             try {
                 setLoading(true);
-                const payload = {
-                    "page": page,
-                    "limit": limit,
-                    "sortOrder": "desc",
-                    "sortBy": "createdAt",
-                };
-                const response = await getData('product/list', payload);
+                const response = await axios.get('https://api.uttambirla.com/product/list', {
+                    params: {
+                        "page": page,
+                        "limit": limit,
+                        "sortOrder": "desc",
+                        "sortBy": "createdAt",
+                    },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${utils.token}`,
+                    }
+                });
+
                 if (page === 1) {
                     setItems(response.data.data);
                 } else {
@@ -76,26 +87,28 @@ const HomeScreen = () => {
     const handleItemPress = async (item) => {
         const isSelected = selectedItems.some(selected => selected._id === item._id);
         let updatedSelectedItems;
-
+        console.log(isSelected);
         if (isSelected) {
             updatedSelectedItems = selectedItems.filter(selected => selected._id !== item._id);
             Toast.show({
                 type: 'info',
                 text1: 'Item Removed',
-                text2: `${item.name} has been removed from your selection.`,
+                text2: `Item has been removed from your selection.`,
             });
         } else {
             updatedSelectedItems = [...selectedItems, item];
             Toast.show({
                 type: 'success',
                 text1: 'Item Added',
-                text2: `${item.name} has been added to your selection.`,
+                text2: `item has been added to your selection.`,
             });
         }
-
+        console.log('Toast triggered');
         setSelectedItems(updatedSelectedItems);
         try {
             await AsyncStorage.setItem('selectedItems', JSON.stringify(updatedSelectedItems));
+            setShowModal(false);
+            setSelectedItem(null);
         } catch (error) {
             console.error('Error saving selected items:', error);
         }
@@ -105,12 +118,23 @@ const HomeScreen = () => {
         setShowImagePreview(false);
     };
 
+    const closeModal = () => {
+        setShowModal(false);
+        setSelectedItem(null);
+    };
+
+    const handleItemPress1 = (item) => {
+        setSelectedItem(item);
+        setShowModal(true);
+    };
+
+
     const renderItem = ({ item }) => {
         const isSelected = selectedItems.some(selected => selected._id === item._id);
         return (
             <TouchableOpacity
                 style={[styles.card, isSelected && styles.selectedCard]}
-                onPress={() => { (utils.userType == 3 || utils.userType == 4) && handleItemPress(item) }}
+                onPress={() => { (utils.userType == 3 || utils.userType == 4) && handleItemPress1(item) }}
             >
                 <View style={{ alignItems: "center", justifyContent: "center" }}>
                     <TouchableOpacity onPress={() => { handleImagePress(item?.images?.[0]) }}>
@@ -122,11 +146,30 @@ const HomeScreen = () => {
                         />
                     </TouchableOpacity>
                 </View>
-                <View style={styles.content}>
-                    <Text numberOfLines={2} style={styles.name}>{item?.name}</Text>
-                    <Text numberOfLines={2} style={styles.description}>{item?.discription}</Text>
-                    <Text style={styles.price}>₹{item?.price}</Text>
-                    <Text style={styles.available}>{item.active ? 'In Stock' : 'Out of Stock'}</Text>
+                <View style={[styles.content, { flexDirection: "column", }]}>
+                    <View style={styles.content}>
+                        <Text numberOfLines={2} style={styles.name}>{item?.name}</Text>
+                        <Text numberOfLines={2} style={styles.description}>{item?.discription}</Text>
+                    </View>
+                    <View style={[styles.content, { flexDirection: "row" }]}>
+                        <View style={{ flex: 0.7 }}>
+                            <Text style={styles.price}>₹{item?.price}</Text>
+                            <Text style={styles.available}>{item.active ? 'In Stock' : 'Out of Stock'}</Text>
+                        </View>
+                        <View style={{ flex: 0.3 }}>
+                            {(utils.userType == 3 || utils.userType == 4) && <View style={styles.iconContainer}>
+                                {!isSelected ? (
+                                    <TouchableOpacity onPress={() => handleItemPress(item)} style={styles.iconButton}>
+                                        <Icon name="cart-plus" size={20} color="#27ae60" />
+                                    </TouchableOpacity>
+                                ) : (
+                                    <TouchableOpacity onPress={() => handleItemPress(item)} style={styles.iconButton}>
+                                        <Icon name="cart-remove" size={20} color="#e74c3c" />
+                                    </TouchableOpacity>
+                                )}
+                            </View>}
+                        </View>
+                    </View>
                 </View>
             </TouchableOpacity>
         );
@@ -160,14 +203,66 @@ const HomeScreen = () => {
                     {loading && page === 1 ? (
                         <Spinner visible={true} textContent={t("Loading")} textStyle={{ color: "#fff" }} />
                     ) : (
-                        <FlatList
-                            data={items}
-                            renderItem={renderItem}
-                            contentContainerStyle={styles.listContainer}
-                            onEndReached={() => { handleLoadMore }}
-                            onEndReachedThreshold={0.5}
-                            ListFooterComponent={loading ? <ActivityIndicator size="large" color="#0000ff" /> : null}
-                        />
+                        <>
+                            <FlatList
+                                data={items}
+                                renderItem={renderItem}
+                                contentContainerStyle={styles.listContainer}
+                                onEndReached={() => { handleLoadMore }}
+                                onEndReachedThreshold={0.5}
+                                ListFooterComponent={loading ? <ActivityIndicator size="large" color="#0000ff" /> : null}
+                            />
+                            <Modal visible={showModal} transparent={true} animationType="slide" style={{ maxHeight: "90%" }}>
+                                <View style={styles.modalContainer}>
+                                    <View style={styles.modalContent}>
+                                        {(utils.userType == 1, utils.userType == 2) &&
+                                            <TouchableOpacity style={styles.closeIcon} onPress={closeModal}>
+                                                <Text style={styles.closeIconText}>X</Text>
+                                            </TouchableOpacity>
+                                        }
+                                        <Image
+                                            source={{
+                                                uri: selectedItem?.images?.[0] || "https://thumbs.dreamstime.com/b/no-image-available-icon-vector-illustration-flat-design-140476186.jpg"
+                                            }}
+                                            style={styles.modalImage}
+                                        />
+                                        <Text style={styles.modalName}>{selectedItem?.name}</Text>
+                                        <ScrollView contentContainerStyle={styles.scrollContent}>
+                                            <Text style={styles.modalDescription}>{selectedItem?.discription}</Text>
+                                        </ScrollView>
+                                        <Text style={styles.modalPrice}>Price:  ₹{selectedItem?.price}</Text>
+                                        <View style={{ width: "90%", flexDirection: "row", justifyContent: "space-between" }}>
+                                            {(utils.userType == 3 || utils.userType == 4) &&
+                                                <>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onPress={() => handleItemPress(selectedItem)}
+                                                        width={'40%'}
+                                                        style={[styles.closeButton, { borderRadius: 50, padding: 5 }]}
+                                                        bg='#1230AE'
+                                                        _text={{ color: "white" }}
+
+                                                    >
+                                                        Add to Cart
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        fontWeight="bold"
+                                                        onPress={closeModal}
+                                                        width={'40%'}
+                                                        style={[styles.closeButton, { borderRadius: 50, padding: 5 }]}
+                                                    >
+                                                        Close
+                                                    </Button>
+                                                </>
+                                            }
+                                        </View>
+                                    </View>
+                                </View>
+                            </Modal>
+                        </>
                     )}
 
                     {imagePrev && (
@@ -182,9 +277,10 @@ const HomeScreen = () => {
                             </View>
                         </Modal>
                     )}
+
                 </View>
             </NativeBaseProvider>
-        </SafeAreaProvider>
+        </SafeAreaProvider >
     );
 };
 
@@ -288,6 +384,57 @@ const styles = StyleSheet.create({
         width: '100%',
         marginTop: 20,
     },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        width: '80%',
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 20,
+        alignItems: 'center',
+    },
+    modalImage: {
+        width: 150,
+        height: 150,
+        marginBottom: 20,
+    },
+    modalName: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    modalDescription: {
+        fontSize: 14,
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 10,
+    },
+    modalPrice: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#27ae60',
+        marginBottom: 20,
+    },
+    closeButton: {
+        marginTop: 5,
+    },
+    iconContainer: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    iconButton: {
+        padding: 5,
+        borderRadius: 50,
+        backgroundColor: '#f0f0f0',
+        marginLeft: 10,
+    },
+
 });
 
 export default HomeScreen;

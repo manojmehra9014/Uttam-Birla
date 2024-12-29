@@ -16,7 +16,7 @@ Navigation.events().registerAppLaunchedListener(() => {
                 children: [
                     {
                         component: {
-                            name: 'SignUpScreen'
+                            name: 'LoginScreen'
                         }
                     }
                 ]

@@ -8,10 +8,11 @@ import { NativeBaseProvider, Avatar, Select, CheckIcon, Divider, Box, Input, But
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { setAuthentication } from '../services/authService';
-import { fetchData, postData } from '../services/apiService';
 import Icon from 'react-native-vector-icons/Feather';
 import Iconn from "react-native-vector-icons/MaterialIcons";
 import Spinner from 'react-native-loading-spinner-overlay';
+import utils from '../services/utils';
+import axios from 'axios';
 const SignUpScreen = ({ componentId }) => {
     const { t } = useTranslation();
     const [username, setUsername] = useState('');
@@ -57,7 +58,12 @@ const SignUpScreen = ({ componentId }) => {
                     "state": selectedState,
                 };
                 showSpinner(true);
-                const response = await postData('user', payload);
+                const response = await axios.post('https://api.uttambirla.com/user', payload, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${utils.token}`,
+                    }
+                });
                 if (response.status == 201) {
                     Alert.alert(t("Info"), t("signUpSuccess"), [
                         {

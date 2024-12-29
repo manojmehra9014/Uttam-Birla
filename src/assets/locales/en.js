@@ -53,4 +53,6 @@ export default {
   Get_OTP: "Get OTP",
   Please_fill_all_required_fields_correctly_to_proceed: "Please fill all required fields correctly to proceed",
   Please_contact_the_admin_or_visit_the_nearest_store: "Please contact the admin or visit the nearest store for assistance. You can reach out via Email: manojmehra***4@gmail.com or Phone: +91 9368667021****.",
+  Invalid_Phone_Number_Format: "Please enter a valid phone number.",
+
 };

@@ -52,7 +52,8 @@ export default {
     Enter_Phone_Number_To_Get_New_Password: "नया पासवर्ड प्राप्त करने के लिए कृपया अपना फ़ोन नंबर दर्ज करें।",
     Get_OTP: "ओटीपी प्राप्त करें",
     Please_fill_all_required_fields_correctly_to_proceed: "कृपया सभी आवश्यक फ़ील्ड्स सही तरीके से भरें।",
-    Please_contact_the_admin_or_visit_the_nearest_store: "कृपया प्रशासन से संपर्क करें या सहायता के लिए नजदीकी स्टोर पर जाएं। आप ईमेल: manoj.m*****4@gmail.com या फोन: +919368***** के माध्यम से संपर्क कर सकते हैं।"
+    Please_contact_the_admin_or_visit_the_nearest_store: "कृपया प्रशासन से संपर्क करें या सहायता के लिए नजदीकी स्टोर पर जाएं। आप ईमेल: manoj.m*****4@gmail.com या फोन: +919368***** के माध्यम से संपर्क कर सकते हैं।",
+    Invalid_Phone_Number_Format: "कृपया एक वैध फोन नंबर दर्ज करें।",
 
 };
 

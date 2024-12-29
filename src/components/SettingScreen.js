@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Avatar, Divider } from 'native-base';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Navigation } from 'react-native-navigation';
-import { I18nextProvider, useTranslation } from 'react-i18next';
+import {  useTranslation } from 'react-i18next';
 import i18n from '../services/i18n';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
@@ -96,7 +96,6 @@ const SettingsScreen = ({ componentId }) => {
     };
 
     return (
-        <I18nextProvider i18n={i18n}>
             <View style={styles.container}>
                 <View style={styles.header}>
                     {/* Avatar at the top center */}
@@ -139,7 +138,6 @@ const SettingsScreen = ({ componentId }) => {
 
 
             </View>
-        </I18nextProvider>
 
     );
 };
