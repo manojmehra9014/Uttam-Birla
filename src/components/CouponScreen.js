@@ -11,7 +11,7 @@ import axios from 'axios';
 const debounce = require('lodash.debounce');
 const CouponScreen = () => {
     const [couponCode, setCouponCode] = useState('');
-    const [couponVerified, setCouponVerified] = useState(null); 
+    const [couponVerified, setCouponVerified] = useState(false);
     const [account, setAccount] = useState('');
     const [ifsc, setifsc] = useState('');
     const [upiId, setUpiId] = useState('');
@@ -19,44 +19,50 @@ const CouponScreen = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [spinner, showSpinner] = useState(false);
     const [paymentType, setPaymentType] = useState('upi');
+    const [verifyCode, setVerifyCode] = useState(false);
+
     const { t } = useTranslation();
 
-    const debouncedVerifyCouponCode = useCallback(
-        debounce(async (code) => {
-            if (code) {
-                try {
-                    showSpinner(true);
-                    const payload = {
-                        "coupanCode": code
+    // Verify coupon code function
+    const verifyCouponCode = async () => {
+        if (couponCode) {
+            try {
+                showSpinner(true);
+                const payload = {
+                    "coupanCode": couponCode
+                };
+                const response = await axios.post('https://api.uttambirla.com/coupan/verify', payload, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${utils.token}`,
+                    },
+                });
+                showSpinner(false);
+                setCouponVerified(response ? true : false);
+                setVerifyCode(true);
+            } catch (error) {
+                setCouponVerified(false);
+                setVerifyCode(false);
+                console.log(error.response);
+                Alert.alert(t("Info"), t(error.response.data.error), [{
+                    text: t("Ok"), onPress: () => {
+                        setCouponVerified(false), setCouponCode(''), setVerifyCode(false);
                     }
-                    const response = await axios.post('https://api.uttambirla.com/coupan/verify', payload, {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${utils.token}`,
-                        },
-                    });
-                    showSpinner(false);
-                    setCouponVerified(response ? true : false);
-                } catch (error) {
-                    setCouponVerified(false);
-                    console.log(error.response);
-                    Alert.alert(t("Info"), t(error.response.data.error), [{ text: t("Ok") }]);
-                } finally {
-                    showSpinner(false);
-                }
+                }]);
+                showSpinner(false);
             }
-        }, 1500),
-        []
-    );
+        } else {
+            Alert.alert(t("Info"), t("Please_fill_all_required_fields_correctly_to_proceed"), [{ text: t("Ok") }]);
+            return;
+        }
+    };
 
     useEffect(() => {
-        if (couponCode) {
-            debouncedVerifyCouponCode(couponCode);
-        } else {
-            setCouponVerified(null);
+        if (couponVerified) {
+            setCouponVerified(false);
         }
-        return () => debouncedVerifyCouponCode.cancel();
-    }, [couponCode, debouncedVerifyCouponCode]);
+    }, [couponCode])
+
 
     const validateInputs = () => {
         if (!couponCode || !phone || (paymentType === 'bank' ? !account || !ifsc : !upiId)) {
@@ -164,7 +170,7 @@ const CouponScreen = () => {
                                     onChangeText={setCouponCode}
                                     placeholderTextColor="#AAAAAA"
                                 />
-                                {couponVerified !== null && (
+                                {(verifyCode || couponVerified) && (
                                     <Icons
                                         name={couponVerified ? "check-circle" : "close-circle-outline"}
                                         size={24}
@@ -200,10 +206,13 @@ const CouponScreen = () => {
 
                                 )}
                             </View>
+                            {couponVerified === false &&
+                                <TouchableOpacity onPress={verifyCouponCode} style={styles.button}>
+                                    <Text style={styles.buttonText}>{t("Verify")}</Text>
+                                </TouchableOpacity>
+                            }
                             {couponVerified === true && (
                                 <>
-
-
                                     {paymentType === 'upi' && (
                                         <View style={styles.inputContainer}>
                                             <TextInput

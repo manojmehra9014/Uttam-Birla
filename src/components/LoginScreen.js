@@ -21,6 +21,10 @@ const LoginScreen = ({ componentId }) => {
     const { t } = useTranslation();
     const [spinner, showSpinner] = useState('fasle');
     const [language, setLanguage] = useState('en');
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertType, setAlertType] = useState('');
+    const [alertMsg, setAlertMsg] = useState('');
+
 
     const changeLanguage = async (language) => {
         i18n.changeLanguage(language);
@@ -78,6 +82,7 @@ const LoginScreen = ({ componentId }) => {
                     }
                 });
                 showSpinner(false);
+                console.log(response);
                 if (response.status) {
                     await AsyncStorage.setItem('phone', phone);
                     await AsyncStorage.setItem('password', password);
@@ -91,27 +96,21 @@ const LoginScreen = ({ componentId }) => {
                     });
                 } else {
                     showSpinner(false);
-                    Alert.alert(t("Info"), t("An_error_occurred"), [
-                        {
-                            text: t("Ok"),
-                        }
-                    ])
+                    setAlertMsg = t("An_error_occurred")
+                    setAlertType = t("Info")
+                    setShowAlert = true
                 }
             } catch (err) {
                 showSpinner(false);
-                Alert.alert(t("Info"), t("Please_fill_all_required_fields_correctly_to_proceed"), [
-                    {
-                        text: t("Ok"),
-                    }
-                ])
+                setAlertMsg = t("Please_fill_all_required_fields_correctly_to_proceed")
+                setAlertType = t("Info")
+                setShowAlert = true
             }
         } else {
             await setAuthentication(false);
-            Alert.alert(t("Info"), t("fillAllFields"), [
-                {
-                    text: t("Ok"),
-                }
-            ])
+            setAlertMsg = t("fillAllFields")
+            setAlertType = t("Info")
+            setShowAlert = true
         }
     };
 

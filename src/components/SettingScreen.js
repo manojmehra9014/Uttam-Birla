@@ -3,13 +3,17 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Avatar, Divider } from 'native-base';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Navigation } from 'react-native-navigation';
-import {  useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import i18n from '../services/i18n';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import GlobalAlert from './GlobalAlert';
 
 const SettingsScreen = ({ componentId }) => {
     const [language, setLanguage] = useState('en');
     const { t } = useTranslation();
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertType, setAlertType] = useState('');
+    const [alertMsg, setAlertMsg] = useState('');
 
     useEffect(() => {
         const fetchLanguage = async () => {
@@ -67,23 +71,26 @@ const SettingsScreen = ({ componentId }) => {
         });
     };
 
-    const showLogoutModal = () => (
-        Alert.alert(
-            t('Logout'),
-            t('logoutContinew'),
-            [
-                {
-                    text: t('Cancel'),
-                    style: 'cancel',
-                },
-                {
-                    text: t('Ok'),
-                    onPress: async () => {
-                        handleLogout()
-                    },
-                },
-            ],
-        ));
+    const showLogoutModal = () => {
+        // Alert.alert(
+        //     t('Logout'),
+        //     t('logoutContinew'),
+        //     [
+        //         {
+        //             text: t('Cancel'),
+        //         },
+        //         {
+        //             text: t('Ok'),
+        //             onPress: async () => {
+        //                 handleLogout()
+        //             },
+        //         },
+        //     ],
+        // ),
+        setAlertMsg = t("logoutContinew");
+        setAlertType = t("Logout");
+        setShowAlert = true;
+    };
 
     const changeLanguage = async (language) => {
         i18n.changeLanguage(language);
@@ -96,48 +103,54 @@ const SettingsScreen = ({ componentId }) => {
     };
 
     return (
-            <View style={styles.container}>
-                <View style={styles.header}>
-                    {/* Avatar at the top center */}
-                    <Avatar bg="blue.500" size="xl" source={require('../assets/image/painter.png')} />
-                    <Text style={styles.headerText}>{t('Setting')}</Text>
-                </View>
-
-                <Divider />
-
-                <View >
-                    <TouchableOpacity
-                        style={styles.languageIconContainer}
-                        onPress={() => changeLanguage(language === 'en' ? 'hi' : 'en')}
-                    >
-                        <View style={{ flex: 0.4, justifyContent: "center", alignItems: "center" }}>
-                            <Icon name="language" size={40} color="#1230AE" />
-                        </View>
-                        <View style={{ flex: 0.6, justifyContent: "center", alignItems: "center" }}>
-                            <Text style={styles.languageText}>{language === 'en' ? 'English' : 'हिन्दी'}</Text>
-                        </View>
-                    </TouchableOpacity>
-                    <Divider />
-                </View>
-
-                <View style={styles.section}>
-                    <TouchableOpacity style={styles.sectionButton} onPress={() => showLogoutModal()}>
-                        <Text style={styles.sectionText}>{t("Logout")}</Text>
-                    </TouchableOpacity>
-                    <Divider />
-                </View>
-
-                <View style={styles.section}>
-                    <TouchableOpacity style={styles.sectionButton} onPress={openHelpSection}>
-                        <Text style={styles.sectionText}>{t('Help')}</Text>
-                    </TouchableOpacity>
-                    <Divider />
-                </View>
-
-
-
-
+        <View style={styles.container}>
+            <View style={styles.header}>
+                {/* Avatar at the top center */}
+                <Avatar bg="blue.500" size="xl" source={require('../assets/image/painter.png')} />
+                <Text style={styles.headerText}>{t('Setting')}</Text>
             </View>
+
+            <Divider />
+
+            <View >
+                <TouchableOpacity
+                    style={styles.languageIconContainer}
+                    onPress={() => changeLanguage(language === 'en' ? 'hi' : 'en')}
+                >
+                    <View style={{ flex: 0.4, justifyContent: "center", alignItems: "center" }}>
+                        <Icon name="language" size={40} color="#1230AE" />
+                    </View>
+                    <View style={{ flex: 0.6, justifyContent: "center", alignItems: "center" }}>
+                        <Text style={styles.languageText}>{language === 'en' ? 'English' : 'हिन्दी'}</Text>
+                    </View>
+                </TouchableOpacity>
+                <Divider />
+            </View>
+
+            <View style={styles.section}>
+                <TouchableOpacity style={styles.sectionButton} onPress={() => showLogoutModal()}>
+                    <Text style={styles.sectionText}>{t("Logout")}</Text>
+                </TouchableOpacity>
+                <Divider />
+            </View>
+
+            <View style={styles.section}>
+                <TouchableOpacity style={styles.sectionButton} onPress={openHelpSection}>
+                    <Text style={styles.sectionText}>{t('Help')}</Text>
+                </TouchableOpacity>
+                <Divider />
+            </View>
+            <GlobalAlert
+                visible={showAlert}
+                title={t("")}
+                message="This is a custom alert message."
+                onConfirm={handleConfirm}
+                onCancel={handleCancel}
+            />
+
+
+
+        </View>
 
     );
 };

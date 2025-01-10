@@ -10,11 +10,11 @@ import NavigationController from './src/components/NavigationController';
 import CartScreen from './src/components/CartScreen';
 import CouponScreen from './src/components/CouponScreen';
 import SettingsScreen from './src/components/SettingScreen';
-
+import GlobalAlert from './src/components/GlobalAlert';
 Navigation.setDefaultOptions({
   topBar: {
-    visible: false, // Hide top bar for all screens
-    height: 0, // Set top bar height to 0
+    visible: false,
+    height: 0,
   },
 });
 
@@ -27,6 +27,7 @@ Navigation.registerComponent('NavigationController', () => NavigationController)
 Navigation.registerComponent('CartScreen', () => CartScreen);
 Navigation.registerComponent('CouponScreen', () => CouponScreen);
 Navigation.registerComponent('SettingsScreen', () => SettingsScreen);
+Navigation.registerComponent('GlobalAlert', () => GlobalAlert);
 
 // Function to check authentication status and navigate accordingly
 const initializeApp = async () => {

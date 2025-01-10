@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, FlatList, ActivityIndicator, Modal, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, Image, StyleSheet, FlatList, ActivityIndicator, Modal, TouchableOpacity, Alert, ScrollView, Dimensions } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { Avatar, Divider } from "native-base";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,6 +11,8 @@ import utils from '../services/utils';
 import Spinner from 'react-native-loading-spinner-overlay';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
+const { width } = Dimensions.get('window');
+import GlobalAlert from './GlobalAlert';
 const HomeScreen = () => {
     const { t } = useTranslation();
     const [items, setItems] = useState([]);
@@ -24,6 +26,9 @@ const HomeScreen = () => {
     const [showModal, setShowModal] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [IsAlredySelected, setIsAlredySelected] = useState(false);
+    const [imageIndex, setImageIndex] = useState(0);
+    const [alredyInCart, setAlredyinCart] = useState(0);
+    const [showAlert, setShowAlert] = useState(false);
 
     useEffect(() => {
         const fetchItems = async () => {
@@ -50,6 +55,7 @@ const HomeScreen = () => {
             } catch (error) {
                 console.error('Error fetching items:', error);
                 setLoading(false);
+                setShowAlert(true);
                 Alert.alert(t("Info"), t("An_error_occurred"), [
                     {
                         text: t("Ok"),
@@ -125,28 +131,56 @@ const HomeScreen = () => {
 
     const handleItemPress1 = (item) => {
         setSelectedItem(item);
+        const isSelected = selectedItems.some(selected => selected._id === item._id);
+        setAlredyinCart(isSelected);
         setShowModal(true);
+
+    };
+
+    // Function to handle scrolling and updating the image index
+    const handleScroll = (event) => {
+        const contentOffsetX = event.nativeEvent.contentOffset.x; // X position of the scroll
+        const imageWidth = width - 100; // Width of each image in the scroll view
+        const index = Math.floor(contentOffsetX / imageWidth); // Calculate the index based on scroll position
+        setImageIndex(index);
     };
 
 
     const renderItem = ({ item }) => {
         const isSelected = selectedItems.some(selected => selected._id === item._id);
+        const images = item?.images || ["https://thumbs.dreamstime.com/b/no-image-available-icon-vector-illustration-flat-design-140476186.jpg"];
         return (
             <TouchableOpacity
                 style={[styles.card, isSelected && styles.selectedCard]}
                 onPress={() => { (utils.userType == 3 || utils.userType == 4) && handleItemPress1(item) }}
             >
                 <View style={{ alignItems: "center", justifyContent: "center" }}>
-                    <TouchableOpacity onPress={() => { handleImagePress(item?.images?.[0]) }}>
-                        <Image
-                            source={{
-                                uri: item?.images?.[0] || "https://thumbs.dreamstime.com/b/no-image-available-icon-vector-illustration-flat-design-140476186.jpg"
-                            }}
-                            style={styles.image}
-                        />
-                    </TouchableOpacity>
+                    {/* Scrollable Image Gallery */}
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} onScroll={handleScroll}>
+                        {images.map((imageUri, index) => (
+                            <TouchableOpacity key={index} onPress={() => handleImagePress(imageUri)}>
+                                <Image
+                                    source={{ uri: imageUri }}
+                                    style={styles.image}
+                                />
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                    {images?.length > 1 &&
+                        <View style={styles.dotsContainer}>
+                            {images.map((_, index) => (
+                                <View
+                                    key={index}
+                                    style={[
+                                        styles.dot,
+                                        index === imageIndex && styles.activeDot
+                                    ]}
+                                />
+                            ))}
+                        </View>
+                    }
                 </View>
-                <View style={[styles.content, { flexDirection: "column", }]}>
+                <View style={[styles.content, { flexDirection: "column" }]}>
                     <View style={styles.content}>
                         <Text numberOfLines={2} style={styles.name}>{item?.name}</Text>
                         <Text numberOfLines={2} style={styles.description}>{item?.discription}</Text>
@@ -175,6 +209,9 @@ const HomeScreen = () => {
         );
     };
 
+
+
+
     const handleLoadMore = () => {
         if (!loading) {
             setPage(prevPage => prevPage + 1);
@@ -185,13 +222,27 @@ const HomeScreen = () => {
         <SafeAreaProvider>
             <NativeBaseProvider>
                 <View style={styles.container}>
-                    <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#fff" }}>
+                    <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: '#fff',
+                        elevation: 2,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 3,
+                    }}>
                         <View style={{ marginHorizontal: 10 }}>
-                            <Avatar bg="white" size="xl" source={require('../assets/image/logo.png')}></Avatar>
+                            <Avatar bg="white" size="lg" source={require('../assets/image/logo.png')}></Avatar>
                         </View>
                         <View>
-                            <Text style={{ fontSize: 14, color: "#1230AE", fontWeight: 700 }}>
-                                {t('welcomeMessage')}
+                            <Text style={{
+                                fontSize: 19,
+                                color: '#1230AE',
+                                fontWeight: 'bold',
+                                marginBottom: 4,
+                            }}>
+                                {t('Welcome to Uttam Birla 🎨!')}
                             </Text>
                             <Text style={{ fontSize: 14, color: "#1230AE", fontWeight: 700 }}>
                                 {t('subMessage')}
@@ -220,14 +271,37 @@ const HomeScreen = () => {
                                                 <Text style={styles.closeIconText}>X</Text>
                                             </TouchableOpacity>
                                         }
-                                        <Image
+                                        {/* <Image
                                             source={{
                                                 uri: selectedItem?.images?.[0] || "https://thumbs.dreamstime.com/b/no-image-available-icon-vector-illustration-flat-design-140476186.jpg"
                                             }}
                                             style={styles.modalImage}
-                                        />
+                                        /> */}
+                                        <ScrollView horizontal showsHorizontalScrollIndicator={false} onScroll={handleScroll}>
+                                            {selectedItem?.images.map((imageUri, index) => (
+                                                <TouchableOpacity key={index} onPress={() => handleImagePress(imageUri)}>
+                                                    <Image
+                                                        source={{ uri: imageUri }}
+                                                        style={styles.image}
+                                                    />
+                                                </TouchableOpacity>
+                                            ))}
+                                        </ScrollView>
+                                        {selectedItem?.images?.length > 1 &&
+                                            <View style={styles.dotsContainer}>
+                                                {selectedItem?.images.map((_, index) => (
+                                                    <View
+                                                        key={index}
+                                                        style={[
+                                                            styles.dot,
+                                                            index === imageIndex && styles.activeDot
+                                                        ]}
+                                                    />
+                                                ))}
+                                            </View>
+                                        }
                                         <Text style={styles.modalName}>{selectedItem?.name}</Text>
-                                        <ScrollView contentContainerStyle={styles.scrollContent}>
+                                        <ScrollView contentContainerStyle={styles.scrollContent} style={{ maxHeight: "40%" }}>
                                             <Text style={styles.modalDescription}>{selectedItem?.discription}</Text>
                                         </ScrollView>
                                         <Text style={styles.modalPrice}>Price:  ₹{selectedItem?.price}</Text>
@@ -240,11 +314,11 @@ const HomeScreen = () => {
                                                         onPress={() => handleItemPress(selectedItem)}
                                                         width={'40%'}
                                                         style={[styles.closeButton, { borderRadius: 50, padding: 5 }]}
-                                                        bg='#1230AE'
+                                                        bg={alredyInCart ? '#e74c3c' : '#1230AE'}
                                                         _text={{ color: "white" }}
 
                                                     >
-                                                        Add to Cart
+                                                        {alredyInCart ? 'Remove Item ' : 'Add to Cart'}
                                                     </Button>
                                                     <Button
                                                         size="sm"
@@ -278,6 +352,12 @@ const HomeScreen = () => {
                         </Modal>
                     )}
 
+                    <GlobalAlert
+                        visible={showAlert}
+                        title={t("Info")}
+                        message={t("An_error_occurred")}
+                        onConfirm={setShowAlert(false)}
+                    />
                 </View>
             </NativeBaseProvider>
         </SafeAreaProvider >
@@ -297,55 +377,9 @@ const styles = StyleSheet.create({
     listContainer: {
         padding: 10,
     },
-    card: {
-        flexDirection: 'row',
-        backgroundColor: '#fff',
-        borderRadius: 8,
-        marginBottom: 10,
-        padding: 10,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 4,
-        elevation: 2,
-        borderColor: '#fff',
-        borderWidth: 2,
-    },
-    selectedCard: {
-        borderColor: '#1230AE',
-        borderWidth: 2,
-    },
-    image: {
-        width: 80,
-        height: 80,
-        borderRadius: 8,
-        marginRight: 10,
-    },
-    content: {
-        flex: 1,
-    },
-    name: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 5,
-    },
-    description: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 5,
-    },
-    price: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#27ae60',
-        marginBottom: 5,
-    },
-    available: {
-        fontSize: 14,
-        color: '#e74c3c',
-    },
     modalContainer: {
         flex: 1,
+        width: "95%",
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
         justifyContent: 'center',
         alignItems: 'center',
@@ -391,10 +425,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     modalContent: {
-        width: '80%',
+        width: '90%',
         backgroundColor: '#fff',
         borderRadius: 10,
-        padding: 20,
+        padding: 10,
         alignItems: 'center',
     },
     modalImage: {
@@ -410,7 +444,6 @@ const styles = StyleSheet.create({
     modalDescription: {
         fontSize: 14,
         color: '#666',
-        textAlign: 'center',
         marginBottom: 10,
     },
     modalPrice: {
@@ -433,6 +466,68 @@ const styles = StyleSheet.create({
         borderRadius: 50,
         backgroundColor: '#f0f0f0',
         marginLeft: 10,
+    },
+    card: {
+        margin: 10,
+        padding: 10,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        elevation: 3,
+        borderWidth: 2,
+        borderColor: '#fff',
+    },
+    selectedCard: {
+        borderWidth: 2,
+        borderColor: '#27ae60',
+    },
+    image: {
+        width: 300, // Adjust the width of each image
+        height: 200, // Adjust the height of each image
+        borderRadius: 8,
+        marginHorizontal: 5, // Spacing between images in scroll
+    },
+    content: {
+        marginTop: 10,
+    },
+    name: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    description: {
+        fontSize: 14,
+        color: '#666',
+    },
+    price: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#27ae60',
+    },
+    available: {
+        fontSize: 14,
+        color: '#e74c3c',
+    },
+    iconContainer: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+    },
+    iconButton: {
+        margin: 5,
+    },
+    dotsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 10,
+    },
+    dot: {
+        width: 10,
+        height: 10,
+        margin: 5,
+        borderRadius: 5,
+        backgroundColor: 'gray',
+    },
+    activeDot: {
+        backgroundColor: 'blue',
     },
 
 });

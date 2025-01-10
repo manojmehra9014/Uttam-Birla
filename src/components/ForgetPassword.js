@@ -46,7 +46,13 @@ const ForgetPassScreen = ({ componentId }) => {
             if (response.status == 200) {
                 Alert.alert(t("Password_Updated"), `${t("Password_Updated_Message")} ${response?.data?.data?.newPassword}`, [
                     {
-                        text: t("Ok"),
+                        text: t("Ok"), onPress: () => {
+                            Navigation.push(componentId, {
+                                component: {
+                                    name: 'LoginScreen',
+                                },
+                            });
+                        }
                     }
                 ])
             } else {
@@ -89,7 +95,7 @@ const ForgetPassScreen = ({ componentId }) => {
                                 placeholderTextColor="#AAAAAA"
                             />
                             <TouchableOpacity onPress={handleOpt} style={styles.button}>
-                                <Text style={styles.buttonText}>{t("Get_OTP")}</Text>
+                                <Text style={styles.buttonText}>{t("Generate Password")}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={() => {
                                 Navigation.pop(componentId);

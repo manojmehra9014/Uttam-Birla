@@ -8,6 +8,7 @@ import { fetchData, postData, getData } from '../services/apiService';
 import utils from '../services/utils';
 import { Button } from 'react-native-paper';
 import axios from 'axios';
+import Spinner from 'react-native-loading-spinner-overlay';
 
 const CartScreen = () => {
     const { t } = useTranslation();
@@ -17,6 +18,7 @@ const CartScreen = () => {
     const [totalAmount, setTotalAmount] = useState(0);
     const [distributer, setDistributer] = useState(null);
     const [distributerList, setDistributerList] = useState(null);
+    const [spinner, setSpinner] = useState(false);
 
     const fetchDistributerListData = async () => {
         try {
@@ -109,6 +111,7 @@ const CartScreen = () => {
 
     const fetchDistributerListData2 = async (payload) => {
         try {
+            setSpinner(true)
             const response = await axios.post('https://api.uttambirla.com/order/create', payload, {
                 headers: {
                     'Content-Type': 'application/json',
@@ -116,11 +119,13 @@ const CartScreen = () => {
                 }
             });
             if (response.status) {
+                setSpinner(false)
                 await AsyncStorage.removeItem('selectedItems');
                 setCartItems([]);
                 setShowModal(false);
                 Alert.alert("Order Confirmed", "Your order has been successfully placed! Thank you for your purchase.");
             } else {
+                setSpinner(false)
                 Alert.alert(t("Info"), t("An_error_occurred"), [
                     {
                         text: t("Ok"),
@@ -128,11 +133,14 @@ const CartScreen = () => {
                 ])
             }
         } catch (error) {
+            setSpinner(false)
             Alert.alert(t("Info"), t("An_error_occurred"), [
                 {
                     text: t("Ok"),
                 }
             ])
+        } finally {
+            setSpinner(false)
         }
     }
 
@@ -286,6 +294,8 @@ const CartScreen = () => {
                                 <Button mode="contained" onPress={() => setShowModal(false)} style={{ backgroundColor: "#1230AE", borderRadius: 25 }} >Cancel</Button>
                             </View>
                         </View>
+                        <Spinner visible={spinner} textContent={t("Submitting")} textStyle={{ color: "#fff" }} />
+
                     </View>
                 </View>
             </Modal>

@@ -47,6 +47,14 @@ const SignUpScreen = ({ componentId }) => {
     }, [selectedState]);
 
     const handleSignUp = async () => {
+        if (confirmPassword != password) {
+            Alert.alert(t("Info"), t("Your Password is not same. Try Again!"), [
+                {
+                    text: t("Ok"),
+                }
+            ])
+            return;
+        }
         if (username && phone && address && pincode && state && city && password && selectedCity) {
             try {
                 const payload = {
@@ -64,6 +72,7 @@ const SignUpScreen = ({ componentId }) => {
                         'Authorization': `Bearer ${utils.token}`,
                     }
                 });
+                console.log(response);
                 if (response.status == 201) {
                     Alert.alert(t("Info"), t("signUpSuccess"), [
                         {

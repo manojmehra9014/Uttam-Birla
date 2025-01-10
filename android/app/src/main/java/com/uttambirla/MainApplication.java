@@ -13,6 +13,7 @@ import org.devio.rn.splashscreen.SplashScreenReactPackage;
 import com.reactnativenavigation.NavigationApplication;
 import com.reactnativenavigation.react.NavigationReactNativeHost;
 import com.oblador.vectoricons.VectorIconsPackage;
+import com.BV.LinearGradient.LinearGradientPackage;
 
 public class MainApplication extends NavigationApplication {
 
@@ -27,6 +28,7 @@ public class MainApplication extends NavigationApplication {
         protected List<ReactPackage> getPackages() {
           @SuppressWarnings("UnnecessaryLocalVariable")
           List<ReactPackage> packages = new PackageList(this).getPackages();
+          packages.add(new LinearGradientPackage());
           return packages;
         }
         
