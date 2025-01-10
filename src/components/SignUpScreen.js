@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, BackHandler } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Navigation } from 'react-native-navigation';
 import SplashScreen from 'react-native-splash-screen';
@@ -13,6 +13,9 @@ import Iconn from "react-native-vector-icons/MaterialIcons";
 import Spinner from 'react-native-loading-spinner-overlay';
 import utils from '../services/utils';
 import axios from 'axios';
+import GlobalAlert from './GlobalAlert';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const SignUpScreen = ({ componentId }) => {
     const { t } = useTranslation();
     const [username, setUsername] = useState('');
@@ -28,6 +31,9 @@ const SignUpScreen = ({ componentId }) => {
     const [show, setShow] = React.useState('false');
     const [spinner, showSpinner] = useState('fasle');
     const handleClick = () => setShow(!show);
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertMsg, setAlertMsg] = useState('');
+    const [alertType, setAlertType] = useState('Info');
 
     useEffect(() => {
         SplashScreen.hide();
@@ -39,6 +45,7 @@ const SignUpScreen = ({ componentId }) => {
         });
     }, []);
 
+
     useEffect(() => {
         if (selectedState) {
             const selectedCities = Indian_states_cities_list.STATE_WISE_CITIES[selectedState] || [];
@@ -48,25 +55,30 @@ const SignUpScreen = ({ componentId }) => {
 
     const handleSignUp = async () => {
         if (confirmPassword != password) {
-            Alert.alert(t("Info"), t("Your Password is not same. Try Again!"), [
-                {
-                    text: t("Ok"),
-                }
-            ])
+            setShowAlert(true);
+            setAlertType("Info");
+            setAlertMsg("password_not_match");
             return;
         }
-        if (username && phone && address && pincode && state && city && password && selectedCity) {
+        if (username && phone && address && pincode && password) {
+            const isNoInternet = await utils.checkInternetReachability()
+            if (isNoInternet) {
+                setShowAlert(true);
+                setAlertType("no_internet");
+                setAlertMsg("internet_msg")
+                return;
+            }
             try {
                 const payload = {
                     "name": username,
                     "phone": phone,
                     "password": password,
-                    "city": selectedCity,
+                    "city": selectedCity || "NaN",
                     "district": address,
-                    "state": selectedState,
+                    "state": selectedState || "NaN",
                 };
                 showSpinner(true);
-                const response = await axios.post('https://api.uttambirla.com/user', payload, {
+                const response = await axios.post(utils.baseUrl + '/user', payload, {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${utils.token}`,
@@ -74,42 +86,39 @@ const SignUpScreen = ({ componentId }) => {
                 });
                 console.log(response);
                 if (response.status == 201) {
-                    Alert.alert(t("Info"), t("signUpSuccess"), [
-                        {
-                            text: t("Ok"),
-                        }
-                    ])
+                    await AsyncStorage.setItem('phone', phone);
+                    await AsyncStorage.setItem('password', password);
+                    utils.token = response?.data?.access_token;
+                    utils.userType = response?.data?.data?.userType;
+                    utils.agentId = response?.data?.data?._id;
                     Navigation.push(componentId, {
                         component: {
-                            name: 'LoginScreen',
+                            name: 'NavigationController',
                         },
                     });
                 } else {
                     console.log("Getting issue in app");
-                    Alert.alert(t("Info"), t("An_error_occurred"), [
-                        {
-                            text: t("Ok"),
-                        }
-                    ])
+                    setShowAlert(true);
+                    setAlertType("Info");
+                    setAlertMsg("An_error_occurred");
+                    return;
                 }
             } catch (error) {
                 showSpinner(false);
-                Alert.alert(t("Info"), t("An_error_occurred"), [
-                    {
-                        text: t("Ok"),
-                    }
-                ])
+                setShowAlert(true);
+                setAlertType("Info");
+                setAlertMsg("An_error_occurred");
+                return;
             } finally {
                 showSpinner(false);
             }
 
         } else {
             await setAuthentication(false);
-            Alert.alert(t("Info"), t("fillAllFields"), [
-                {
-                    text: t("Ok"),
-                }
-            ])
+            setShowAlert(true);
+            setAlertType("Info");
+            setAlertMsg("fillAllFields");
+            return;
         }
     };
 
@@ -145,6 +154,7 @@ const SignUpScreen = ({ componentId }) => {
                             value={username}
                             onChangeText={setUsername}
                             placeholderTextColor="#AAAAAA"
+                            maxLength={50}
                         />
                         <TextInput
                             style={styles.input}
@@ -153,6 +163,7 @@ const SignUpScreen = ({ componentId }) => {
                             onChangeText={setPhone}
                             keyboardType="phone-pad"
                             placeholderTextColor="#AAAAAA"
+                            maxLength={15}
                         />
                         <TextInput
                             style={styles.input}
@@ -160,6 +171,7 @@ const SignUpScreen = ({ componentId }) => {
                             value={address}
                             onChangeText={setAddress}
                             placeholderTextColor="#AAAAAA"
+                            maxLength={150}
                         />
                         <TextInput
                             style={styles.input}
@@ -168,6 +180,7 @@ const SignUpScreen = ({ componentId }) => {
                             onChangeText={setPincode}
                             keyboardType="numeric"
                             placeholderTextColor="#AAAAAA"
+                            maxLength={10}
                         />
 
                         <View style={{ marginBottom: 15 }}>
@@ -201,7 +214,6 @@ const SignUpScreen = ({ componentId }) => {
 
                         {city && (
                             <View style={{ marginBottom: 15 }}>
-
                                 <Select
                                     selectedValue={selectedCity}
                                     minWidth="100%"
@@ -256,7 +268,7 @@ const SignUpScreen = ({ componentId }) => {
                                         onPress={handleClick}
                                     >
                                         <Iconn
-                                            name={show ? "visibility-off" : "visibility"}
+                                            name={!show ? "visibility-off" : "visibility"}
                                             size={25}
                                             color="#1230AE"
                                         />
@@ -302,6 +314,12 @@ const SignUpScreen = ({ componentId }) => {
                         </Text>
                     </View>
                     <Spinner visible={spinner} textContent={t("Loading")} textStyle={{ color: "#fff" }} />
+                    <GlobalAlert
+                        visible={showAlert}
+                        title={alertType}
+                        message={alertMsg}
+                        onCancel={() => { setShowAlert(false) }}
+                    />
                 </ScrollView>
             </NativeBaseProvider>
         </SafeAreaProvider>

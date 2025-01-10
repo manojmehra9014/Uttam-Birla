@@ -1,31 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
 import { Navigation } from 'react-native-navigation';
 import SplashScreen from 'react-native-splash-screen';
-import { NativeBaseProvider } from "native-base";
+import { NativeBaseProvider, Box, Input, Button } from "native-base";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchData, postData } from '../services/apiService';
 import { setAuthentication } from '../services/authService';
 import Spinner from 'react-native-loading-spinner-overlay';
 Icon.loadFont();
 import i18n from '../services/i18n';
 import utils from '../services/utils';
 import axios from 'axios';
+import GlobalAlert from './GlobalAlert';
+import Iconn from "react-native-vector-icons/MaterialIcons";
 
 const LoginScreen = ({ componentId }) => {
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const { t } = useTranslation();
-    const [spinner, showSpinner] = useState('fasle');
+    const [spinner, showSpinner] = useState(false);
     const [language, setLanguage] = useState('en');
     const [showAlert, setShowAlert] = useState(false);
-    const [alertType, setAlertType] = useState('');
     const [alertMsg, setAlertMsg] = useState('');
-
-
+    const [alertType, setAlertType] = useState('Info');
+    const [show, setShow] = React.useState('false');
+    const handleClick = () => setShow(!show);
     const changeLanguage = async (language) => {
         i18n.changeLanguage(language);
         setLanguage(language);
@@ -66,6 +67,13 @@ const LoginScreen = ({ componentId }) => {
     }, []);
 
     const handleLogin = async (phone, password) => {
+        const isInternet = await utils.checkInternetReachability()
+        if (isInternet) {
+            setShowAlert(true);
+            setAlertType("no_internet");
+            setAlertMsg("internet_msg")
+            return;
+        }
         if (phone && password) {
             showSpinner(true);
             const payload = {
@@ -73,17 +81,14 @@ const LoginScreen = ({ componentId }) => {
                 "password": password,
             };
             try {
-                // const response = await postData('user/login', payload);
-                // const response = await axios.post('')
-                const response = await axios.post('https://api.uttambirla.com/user/login', payload, {
+                const response = await axios.post(utils.baseUrl + '/user/login', payload, {
                     headers: {
                         'Content-Type': 'application/json',
-                        // 'Authorization': `Bearer ${utils.token}`,
                     }
                 });
                 showSpinner(false);
-                console.log(response);
                 if (response.status) {
+                    console.log(response.data);
                     await AsyncStorage.setItem('phone', phone);
                     await AsyncStorage.setItem('password', password);
                     utils.token = response?.data?.access_token;
@@ -96,21 +101,20 @@ const LoginScreen = ({ componentId }) => {
                     });
                 } else {
                     showSpinner(false);
-                    setAlertMsg = t("An_error_occurred")
-                    setAlertType = t("Info")
-                    setShowAlert = true
+                    setShowAlert(true);
+                    setAlertMsg("An_error_occurred")
                 }
             } catch (err) {
+                console.log(err)
+                console.log(err.response)
                 showSpinner(false);
-                setAlertMsg = t("Please_fill_all_required_fields_correctly_to_proceed")
-                setAlertType = t("Info")
-                setShowAlert = true
+                setShowAlert(true);
+                setAlertMsg("Please_fill_all_required_fields_correctly_to_proceed")
             }
         } else {
             await setAuthentication(false);
-            setAlertMsg = t("fillAllFields")
-            setAlertType = t("Info")
-            setShowAlert = true
+            setShowAlert(true);
+            setAlertMsg("fillAllFields")
         }
     };
 
@@ -141,14 +145,40 @@ const LoginScreen = ({ componentId }) => {
                             keyboardType="phone-pad"
                             placeholderTextColor="#AAAAAA"
                         />
-                        <TextInput
-                            style={styles.input}
-                            placeholder={t("password")}
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry
-                            placeholderTextColor="#AAAAAA"
-                        />
+                        <Box alignItems="center" marginBottom={5}>
+                            <Input
+                                type={show ? "text" : "password"}
+                                w="100%"
+                                py="1.5"
+                                h={12}
+                                borderRadius="50"
+                                borderColor={"#1230AE"}
+                                _focus={{
+                                    borderColor: "#1230AE",
+                                    bg: "white",
+                                }}
+                                value={password}
+                                onChangeText={setPassword}
+                                InputRightElement={
+                                    <Button
+                                        size="xs"
+                                        // rounded="full"
+                                        w="1/6"
+                                        h="full"
+                                        bg="#fff"
+                                        _pressed={{ bg: "#fff" }}
+                                        onPress={handleClick}
+                                    >
+                                        <Iconn
+                                            name={!show ? "visibility-off" : "visibility"}
+                                            size={25}
+                                            color="#1230AE"
+                                        />
+                                    </Button>
+                                }
+                                placeholder="Password"
+                            />
+                        </Box>
                         <TouchableOpacity onPress={() => { handleLogin(phone, password) }} style={styles.button}>
                             <Text style={styles.buttonText}>{t("login")}</Text>
                         </TouchableOpacity>
@@ -176,6 +206,12 @@ const LoginScreen = ({ componentId }) => {
                         </Text>
                     </View>
                 </View>
+                <GlobalAlert
+                    visible={showAlert}
+                    title={alertType}
+                    message={alertMsg}
+                    onConfirm={() => setShowAlert(false)}
+                />
                 <Spinner visible={spinner} textContent={t("Loading")} textStyle={{ color: "#fff" }} />
             </ScrollView>
         </NativeBaseProvider>

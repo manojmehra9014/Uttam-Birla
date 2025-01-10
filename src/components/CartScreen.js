@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Modal, ScrollView, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Modal, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Avatar, Divider, Select, CheckIcon } from "native-base";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
-import { fetchData, postData, getData } from '../services/apiService';
 import utils from '../services/utils';
 import { Button } from 'react-native-paper';
 import axios from 'axios';
 import Spinner from 'react-native-loading-spinner-overlay';
-
+import GlobalAlert from './GlobalAlert';
 const CartScreen = () => {
     const { t } = useTranslation();
     const [cartItems, setCartItems] = useState([]);
@@ -19,10 +18,20 @@ const CartScreen = () => {
     const [distributer, setDistributer] = useState(null);
     const [distributerList, setDistributerList] = useState(null);
     const [spinner, setSpinner] = useState(false);
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertMsg, setAlertMsg] = useState('');
+    const [alertType, setAlertType] = useState('Info');
 
     const fetchDistributerListData = async () => {
         try {
-            const response = await axios.get('https://api.uttambirla.com/user/distributer/list', {
+            const isNoInternet = await utils.checkInternetReachability()
+            if (isNoInternet) {
+                setShowAlert(true);
+                setAlertType("no_internet");
+                setAlertMsg("internet_msg")
+                return;
+            }
+            const response = await axios.get(utils.baseUrl + '/user/distributer/list', {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${utils.token}`,
@@ -31,11 +40,10 @@ const CartScreen = () => {
             console.log(response.data.data);
             setDistributerList(response.data.data);
         } catch (error) {
-            Alert.alert(t("Info"), t("An_error_occurred"), [
-                {
-                    text: t("Ok"),
-                }
-            ])
+            setShowAlert(true);
+            setAlertType("Info");
+            setAlertMsg("An_error_occurred");
+            return;
         }
     }
 
@@ -111,8 +119,15 @@ const CartScreen = () => {
 
     const fetchDistributerListData2 = async (payload) => {
         try {
+            const isNoInternet = await utils.checkInternetReachability()
+            if (isNoInternet) {
+                setShowAlert(true);
+                setAlertType("no_internet");
+                setAlertMsg("internet_msg")
+                return;
+            }
             setSpinner(true)
-            const response = await axios.post('https://api.uttambirla.com/order/create', payload, {
+            const response = await axios.post(utils.baseUrl + '/order/create', payload, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${utils.token}`,
@@ -123,22 +138,20 @@ const CartScreen = () => {
                 await AsyncStorage.removeItem('selectedItems');
                 setCartItems([]);
                 setShowModal(false);
-                Alert.alert("Order Confirmed", "Your order has been successfully placed! Thank you for your purchase.");
+                setShowAlert(true);
+                setAlertType("Order_Confirmed");
+                setAlertMsg("Your_order_has_been_successfully_placed");
             } else {
                 setSpinner(false)
-                Alert.alert(t("Info"), t("An_error_occurred"), [
-                    {
-                        text: t("Ok"),
-                    }
-                ])
+                setShowAlert(true);
+                setAlertType("Info");
+                setAlertMsg("An_error_occurred");
             }
         } catch (error) {
             setSpinner(false)
-            Alert.alert(t("Info"), t("An_error_occurred"), [
-                {
-                    text: t("Ok"),
-                }
-            ])
+            setShowAlert(true);
+            setAlertType("Info");
+            setAlertMsg("An_error_occurred");
         } finally {
             setSpinner(false)
         }
@@ -146,7 +159,9 @@ const CartScreen = () => {
 
     const confirmCheckout = async () => {
         if (!distributer || !utils.agentId) {
-            Alert.alert("Info", "Please select all required field!");
+            setShowAlert(true);
+            setAlertType("Info");
+            setAlertMsg("Please_select_all_required_field");
             return;
         }
         const orderItems = cartItems.map(item => ({
@@ -163,7 +178,9 @@ const CartScreen = () => {
         try {
             fetchDistributerListData2(payload);
         } catch (error) {
-            Alert.alert("Error", "Something went Wrong!");
+            setShowAlert(true);
+            setAlertType("Error");
+            setAlertMsg("Something_went_Wrong");
             console.error('Error placing the order:', error);
         }
     };
@@ -295,7 +312,12 @@ const CartScreen = () => {
                             </View>
                         </View>
                         <Spinner visible={spinner} textContent={t("Submitting")} textStyle={{ color: "#fff" }} />
-
+                        <GlobalAlert
+                            visible={showAlert}
+                            title={alertType}
+                            message={alertMsg}
+                            onCancel={() => { setShowAlert(false) }}
+                        />
                     </View>
                 </View>
             </Modal>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Avatar, Divider } from 'native-base';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Navigation } from 'react-native-navigation';
@@ -12,8 +12,8 @@ const SettingsScreen = ({ componentId }) => {
     const [language, setLanguage] = useState('en');
     const { t } = useTranslation();
     const [showAlert, setShowAlert] = useState(false);
-    const [alertType, setAlertType] = useState('');
     const [alertMsg, setAlertMsg] = useState('');
+    const [alertType, setAlertType] = useState('Info');
 
     useEffect(() => {
         const fetchLanguage = async () => {
@@ -54,42 +54,15 @@ const SettingsScreen = ({ componentId }) => {
     };
 
     const openHelpSection = () => {
-        Alert.alert(
-            t("Info"),
-            t("Please_contact_the_admin_or_visit_the_nearest_store"),
-            [
-                { text: t("Ok") }
-            ]
-        );
-    };
-
-    const openOtherSection = () => {
-        Navigation.push(componentId, {
-            component: {
-                name: 'LoginScreen',
-            },
-        });
+        setShowAlert(true);
+        setAlertType("Info");
+        setAlertMsg("Please_contact_the_admin_or_visit_the_nearest_store");
     };
 
     const showLogoutModal = () => {
-        // Alert.alert(
-        //     t('Logout'),
-        //     t('logoutContinew'),
-        //     [
-        //         {
-        //             text: t('Cancel'),
-        //         },
-        //         {
-        //             text: t('Ok'),
-        //             onPress: async () => {
-        //                 handleLogout()
-        //             },
-        //         },
-        //     ],
-        // ),
-        setAlertMsg = t("logoutContinew");
-        setAlertType = t("Logout");
-        setShowAlert = true;
+        setShowAlert(true);
+        setAlertType("Logout");
+        setAlertMsg("logoutContinew");
     };
 
     const changeLanguage = async (language) => {
@@ -142,10 +115,13 @@ const SettingsScreen = ({ componentId }) => {
             </View>
             <GlobalAlert
                 visible={showAlert}
-                title={t("")}
-                message="This is a custom alert message."
-                onConfirm={handleConfirm}
-                onCancel={handleCancel}
+                title={alertType}
+                message={alertMsg}
+                onConfirm={alertType === "Logout" ? () => {
+                    setShowAlert(false);
+                    handleLogout();
+                } : undefined}
+                onCancel={() => { setShowAlert(false) }}
             />
 
 

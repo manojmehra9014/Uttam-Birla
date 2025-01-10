@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import i18n from '../services/i18n';
+import { useTranslation } from 'react-i18next';
 
-const GlobalAlert = ({ visible, title, message, onConfirm, confirmText = "OK", onCancel, cancelText = "Cancel" }) => {
+const GlobalAlert = ({ visible, title, message, onConfirm, confirmText = "Ok", onCancel, cancelText = "Close" }) => {
+    const { t } = useTranslation();
+
     return (
         <Modal
             transparent
@@ -11,17 +15,17 @@ const GlobalAlert = ({ visible, title, message, onConfirm, confirmText = "OK", o
         >
             <View style={styles.overlay}>
                 <View style={styles.alertContainer}>
-                    <Text style={styles.alertTitle}>{title}</Text>
-                    <Text style={styles.alertMessage}>{message}</Text>
+                    <Text style={styles.alertTitle}>{t(title)}</Text>
+                    <Text style={styles.alertMessage}>{t(message)}</Text>
                     <View style={styles.buttonContainer}>
                         {onCancel && (
                             <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-                                <Text style={styles.cancelButtonText}>{cancelText}</Text>
+                                <Text style={styles.cancelButtonText}>{t(cancelText)}</Text>
                             </TouchableOpacity>
                         )}
                         {onConfirm && (
                             <TouchableOpacity style={styles.confirmButton} onPress={onConfirm}>
-                                <Text style={styles.confirmButtonText}>{confirmText}</Text>
+                                <Text style={styles.confirmButtonText}>{t(confirmText)}</Text>
                             </TouchableOpacity>
                         )}
                     </View>
@@ -50,37 +54,47 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginBottom: 10,
         textAlign: 'center',
+        color: "#000"
     },
     alertMessage: {
         fontSize: 16,
         color: '#333',
         marginBottom: 20,
         textAlign: 'center',
+        marginTop: 10,
+        marginBottom: 40
     },
     buttonContainer: {
         flexDirection: 'row',
-        justifyContent: 'flex-end',
+        justifyContent: 'center',
+        // alignItems: "center"
     },
     cancelButton: {
         backgroundColor: '#f0f0f0',
         paddingVertical: 10,
         paddingHorizontal: 15,
-        borderRadius: 5,
+        borderRadius: 50,
         marginRight: 10,
+        flex: 0.5,
     },
     cancelButtonText: {
         color: '#333',
         fontSize: 16,
+        textAlign: "center"
     },
     confirmButton: {
-        backgroundColor: '#007bff',
+        backgroundColor: '#1230AE',
         paddingVertical: 10,
         paddingHorizontal: 15,
-        borderRadius: 5,
+        borderRadius: 50,
+        flex: 0.5,
+
     },
     confirmButtonText: {
         color: '#fff',
         fontSize: 16,
+        textAlign: "center"
+
     },
 });
 

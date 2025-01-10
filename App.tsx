@@ -11,6 +11,7 @@ import CartScreen from './src/components/CartScreen';
 import CouponScreen from './src/components/CouponScreen';
 import SettingsScreen from './src/components/SettingScreen';
 import GlobalAlert from './src/components/GlobalAlert';
+
 Navigation.setDefaultOptions({
   topBar: {
     visible: false,

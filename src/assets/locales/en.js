@@ -54,5 +54,21 @@ export default {
   Please_fill_all_required_fields_correctly_to_proceed: "Please fill all required fields correctly to proceed",
   Please_contact_the_admin_or_visit_the_nearest_store: "Please contact the admin or visit the nearest store for assistance. You can reach out via Email: manojmehra***4@gmail.com or Phone: +91 9368667021****.",
   Invalid_Phone_Number_Format: "Please enter a valid phone number.",
+  Something_went_Wrong: "Something went Wrong. Try Again!",
+  Error: "Error",
+  Please_select_all_required_field: "Please select all requireds field!",
+  Your_order_has_been_successfully_placed: "Your order has been successfully placed! Thank you for your purchase.",
+  Order_Confirmed: "Order Confirmed",
+  Validation_Error: "Validation Error",
+  Coupon_submitted_successfully: "Coupon submitted successfully!",
+  Server_Error: "Input Error",
+  password_not_match: "Oops! The passwords don’t match. Please check and try again.",
+  Success: "Success",
+  Close: "Close",
+  internet_msg: "Please check your internet connection and try again.",
+  no_internet: "No Internet Connection",
+  Exit_App: "Exit App",
+  want_to_exit: "Do you want to exit?",
+
 
 };

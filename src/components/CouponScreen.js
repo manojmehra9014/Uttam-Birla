@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, Modal, ScrollView, KeyboardAvoidingView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Modal, ScrollView, KeyboardAvoidingView } from 'react-native';
 import { NativeBaseProvider, Radio } from "native-base";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Spinner from 'react-native-loading-spinner-overlay';
 import Icons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { postData } from '../services/apiService';
 import { useTranslation } from 'react-i18next';
 import utils from '../services/utils';
 import axios from 'axios';
 const debounce = require('lodash.debounce');
+import GlobalAlert from './GlobalAlert';
 const CouponScreen = () => {
     const [couponCode, setCouponCode] = useState('');
     const [couponVerified, setCouponVerified] = useState(false);
@@ -20,6 +20,9 @@ const CouponScreen = () => {
     const [spinner, showSpinner] = useState(false);
     const [paymentType, setPaymentType] = useState('upi');
     const [verifyCode, setVerifyCode] = useState(false);
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertMsg, setAlertMsg] = useState('');
+    const [alertType, setAlertType] = useState('Info');
 
     const { t } = useTranslation();
 
@@ -27,11 +30,18 @@ const CouponScreen = () => {
     const verifyCouponCode = async () => {
         if (couponCode) {
             try {
+                const isNoInternet = await utils.checkInternetReachability()
+                if (isNoInternet) {
+                    setShowAlert(true);
+                    setAlertType("no_internet");
+                    setAlertMsg("internet_msg")
+                    return;
+                }
                 showSpinner(true);
                 const payload = {
                     "coupanCode": couponCode
                 };
-                const response = await axios.post('https://api.uttambirla.com/coupan/verify', payload, {
+                const response = await axios.post(utils.baseUrl + '/coupan/verify', payload, {
                     headers: {
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${utils.token}`,
@@ -44,15 +54,15 @@ const CouponScreen = () => {
                 setCouponVerified(false);
                 setVerifyCode(false);
                 console.log(error.response);
-                Alert.alert(t("Info"), t(error.response.data.error), [{
-                    text: t("Ok"), onPress: () => {
-                        setCouponVerified(false), setCouponCode(''), setVerifyCode(false);
-                    }
-                }]);
                 showSpinner(false);
+                setShowAlert(true);
+                setAlertType("Server_Error");
+                setAlertMsg(error.response.data.error);
             }
         } else {
-            Alert.alert(t("Info"), t("Please_fill_all_required_fields_correctly_to_proceed"), [{ text: t("Ok") }]);
+            setShowAlert(true);
+            setAlertType("Info");
+            setAlertMsg("Please_fill_all_required_fields_correctly_to_proceed");
             return;
         }
     };
@@ -66,7 +76,9 @@ const CouponScreen = () => {
 
     const validateInputs = () => {
         if (!couponCode || !phone || (paymentType === 'bank' ? !account || !ifsc : !upiId)) {
-            Alert.alert("Validation Error", "Please fill all required fields.");
+            setShowAlert(true);
+            setAlertType("Validation_Error");
+            setAlertMsg("Please_fill_all_required_fields_correctly_to_proceed");
             return false;
         }
         return true;
@@ -86,9 +98,16 @@ const CouponScreen = () => {
                     ? { "upiId": upiId }
                     : { "accountNo": account, "ifscCode": ifsc })
             };
+            const isNoInternet = await utils.checkInternetReachability()
+            if (isNoInternet) {
+                setShowAlert(true);
+                setAlertType("no_internet");
+                setAlertMsg("internet_msg")
+                return;
+            }
             showSpinner(true);
             console.log(payload);
-            const response = await axios.post('https://api.uttambirla.com/payout/create', payload, {
+            const response = await axios.post(utils.baseUrl + '/payout/create', payload, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${utils.token}`,
@@ -98,20 +117,9 @@ const CouponScreen = () => {
             if (response.status) {
                 setIsModalVisible(false);
                 showSpinner(false);
-                Alert.alert("Success", "Coupon submitted successfully!", [
-                    {
-                        text: "OK",
-                        onPress: () => {
-                            setCouponCode('');
-                            setCouponVerified(null);
-                            setAccount('');
-                            setifsc('');
-                            setUpiId('');
-                            setPhone('');
-                            setPaymentType('');
-                        }
-                    }
-                ]);
+                setShowAlert(true);
+                setAlertType("Success");
+                setAlertMsg("Coupon_submitted_successfully");
             } else {
                 setIsModalVisible(false);
                 showSpinner(false);
@@ -119,11 +127,9 @@ const CouponScreen = () => {
 
         } catch (error) {
             console.log(error.response);
-            Alert.alert(t("Info"), t(error.response.data.message), [
-                {
-                    text: t("Ok"),
-                }
-            ])
+            setShowAlert(true);
+            setAlertType("Info");
+            setAlertMsg(error.response.data.message);
         } finally {
             setIsModalVisible(false);
             showSpinner(false);
@@ -266,6 +272,33 @@ const CouponScreen = () => {
                             }
                         </View>
                         <Spinner visible={spinner} textContent={t("Submitting")} textStyle={{ color: "#fff" }} />
+                        <GlobalAlert
+                            visible={showAlert}
+                            title={alertType}
+                            message={alertMsg}
+                            onConfirm={
+                                alertType === "Server_Error"
+                                    ? () => {
+                                        setCouponVerified(false);
+                                        setCouponCode('');
+                                        setVerifyCode(false);
+                                        setShowAlert(false)
+                                    }
+                                    : alertType === "Success"
+                                        ? () => {
+                                            setCouponCode('');
+                                            setCouponVerified(null);
+                                            setAccount('');
+                                            setifsc('');
+                                            setUpiId('');
+                                            setPhone('');
+                                            setPaymentType('');
+                                            setShowAlert(false)
+                                        }
+                                        : undefined
+                            }
+                            onCancel={() => setShowAlert(false)}
+                        />
                         <Modal
                             visible={isModalVisible}
                             transparent={true}

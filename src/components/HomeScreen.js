@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, FlatList, ActivityIndicator, Modal, TouchableOpacity, Alert, ScrollView, Dimensions } from 'react-native';
+import { View, Text, Image, StyleSheet, FlatList, ActivityIndicator, Modal, TouchableOpacity, ScrollView, Dimensions, BackHandler } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { Avatar, Divider } from "native-base";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 import { NativeBaseProvider, Button } from "native-base";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { fetchData, postData, getData } from '../services/apiService';
 import utils from '../services/utils';
 import Spinner from 'react-native-loading-spinner-overlay';
 import axios from 'axios';
@@ -29,12 +28,20 @@ const HomeScreen = () => {
     const [imageIndex, setImageIndex] = useState(0);
     const [alredyInCart, setAlredyinCart] = useState(0);
     const [showAlert, setShowAlert] = useState(false);
-
+    const [alertMsg, setAlertMsg] = useState('');
+    const [alertType, setAlertType] = useState('Info');
     useEffect(() => {
         const fetchItems = async () => {
             try {
+                const isNoInternet = await utils.checkInternetReachability()
+                if (isNoInternet) {
+                    setShowAlert(true);
+                    setAlertType("no_internet");
+                    setAlertMsg("internet_msg")
+                    return;
+                }
                 setLoading(true);
-                const response = await axios.get('https://api.uttambirla.com/product/list', {
+                const response = await axios.get(utils.baseUrl + '/product/list', {
                     params: {
                         "page": page,
                         "limit": limit,
@@ -56,11 +63,7 @@ const HomeScreen = () => {
                 console.error('Error fetching items:', error);
                 setLoading(false);
                 setShowAlert(true);
-                Alert.alert(t("Info"), t("An_error_occurred"), [
-                    {
-                        text: t("Ok"),
-                    }
-                ])
+                setAlertMsg("An_error_occurred")
             } finally {
                 setLoading(false);
             }
@@ -83,6 +86,16 @@ const HomeScreen = () => {
             setUserType(utils.userType || 2);
         };
         fetchUserType();
+        const backAction = () => {
+            setShowAlert(true);
+            setAlertType("Exit_App")
+            setAlertMsg("Do you want to exit?");
+            return true; // Prevent the default back button behavior
+        };
+        BackHandler.addEventListener("hardwareBackPress", backAction);
+        return () => {
+            BackHandler.removeEventListener("hardwareBackPress", backAction);
+        };
     }, []);
 
     const handleImagePress = (image) => {
@@ -354,9 +367,9 @@ const HomeScreen = () => {
 
                     <GlobalAlert
                         visible={showAlert}
-                        title={t("Info")}
-                        message={t("An_error_occurred")}
-                        onConfirm={setShowAlert(false)}
+                        title={alertType}
+                        message={alertMsg}
+                        onConfirm={() => { setShowAlert(false) }}
                     />
                 </View>
             </NativeBaseProvider>

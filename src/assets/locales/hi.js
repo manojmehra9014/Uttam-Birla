@@ -54,6 +54,22 @@ export default {
     Please_fill_all_required_fields_correctly_to_proceed: "कृपया सभी आवश्यक फ़ील्ड्स सही तरीके से भरें।",
     Please_contact_the_admin_or_visit_the_nearest_store: "कृपया प्रशासन से संपर्क करें या सहायता के लिए नजदीकी स्टोर पर जाएं। आप ईमेल: manoj.m*****4@gmail.com या फोन: +919368***** के माध्यम से संपर्क कर सकते हैं।",
     Invalid_Phone_Number_Format: "कृपया एक वैध फोन नंबर दर्ज करें।",
+    Something_went_Wrong: "कुछ ग़लत हुआ। पुनः प्रयास करें!",
+    Error: "गलती",
+    Please_select_all_required_field: "कृपया सभी आवश्यक फ़ील्ड चुनें!",
+    Your_order_has_been_successfully_placed: "आपका ऑर्डर सफलतापूर्वक रखा गया है! आपकी खरीदारी के लिए धन्यवाद।",
+    Order_Confirmed: "ऑर्डर की पुष्टि हो गई",
+    Validation_Error: "सत्यापन त्रुटि",
+    Coupon_submitted_successfully: "कूपन सफलतापूर्वक सबमिट किया गया!",
+    Server_Error: "इनपुट त्रुटि",
+    password_not_match: "ओह! पासवर्ड मेल नहीं खाते। कृपया जाँचें और पुनः प्रयास करें।",
+    Success: "सफलता",
+    Close: "बंद करना",
+    internet_msg: "अपने इंटरनेट कनेक्शन की जाँच करें और पुन: प्रयास करें।",
+    no_internet: "कोई इंटरनेट कनेक्शन नहीं",
+    want_to_exit: "क्या आपको बाहर निकलना है?",
+    Exit_App: "ऐप से बाहर निकलें",
+
 
 };
 

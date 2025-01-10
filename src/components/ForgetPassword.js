@@ -1,42 +1,51 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Navigation } from 'react-native-navigation';
-import { NativeBaseProvider, Avatar, Select, CheckIcon, Divider } from "native-base";
+import { NativeBaseProvider } from "native-base";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { i18n } from '../services/i18n';
 import Spinner from 'react-native-loading-spinner-overlay';
 import utils from '../services/utils';
 import axios from 'axios';
+import GlobalAlert from './GlobalAlert';
+
 const ForgetPassScreen = ({ componentId }) => {
     const { t } = useTranslation();
     const [phone, setPhone] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertMsg, setAlertMsg] = useState('');
+    const [alertType, setAlertType] = useState('Info');
+    const [otp, setOPT] = useState('');
 
     const handleOpt = async () => {
         if (!phone) {
-            Alert.alert(t("Info"), t("Enter_Phone_Number_To_Get_New_Password"), [
-                {
-                    text: t("Ok"),
-                }
-            ])
+            setShowAlert(true);
+            setAlertType("Info");
+            setAlertMsg("Enter_Phone_Number_To_Get_New_Password");
             return;
         }
         const phoneRegex = /^[0-9]{10}$/;
         if (!phoneRegex.test(phone)) {
-            Alert.alert(t("Info"), t("Invalid_Phone_Number_Format"), [
-                {
-                    text: t("Ok"),
-                }
-            ]);
+            setShowAlert(true);
+            setAlertType("Info");
+            setAlertMsg("Invalid_Phone_Number_Format");
             return;
         }
         try {
             const payload = {
                 "phone": phone
             }
+            const isNoInternet = await utils.checkInternetReachability()
+            if (isNoInternet) {
+                setShowAlert(true);
+                setAlertType("no_internet");
+                setAlertMsg("internet_msg")
+                return;
+            }
             setLoading(true);
-            const response = await axios.post('https://api.uttambirla.com/user/forgot-password', payload, {
+            const response = await axios.post(utils.baseUrl + '/user/forgot-password', payload, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${utils.token}`,
@@ -44,31 +53,20 @@ const ForgetPassScreen = ({ componentId }) => {
             });
             setLoading(false);
             if (response.status == 200) {
-                Alert.alert(t("Password_Updated"), `${t("Password_Updated_Message")} ${response?.data?.data?.newPassword}`, [
-                    {
-                        text: t("Ok"), onPress: () => {
-                            Navigation.push(componentId, {
-                                component: {
-                                    name: 'LoginScreen',
-                                },
-                            });
-                        }
-                    }
-                ])
+                setShowAlert(true);
+                setAlertType("Password_Updated");
+                setAlertMsg(`${t("Password_Updated_Message")} ${response?.data?.data?.newPassword}`);
+                setOPT(response?.data?.data?.newPassword)
             } else {
-                Alert.alert(t("Info"), t("An_error_occurred"), [
-                    {
-                        text: t("Ok"),
-                    }
-                ]);
+                setShowAlert(true);
+                setAlertType("Info");
+                setAlertMsg("An_error_occurred");
             }
         } catch (error) {
             setLoading(false);
-            Alert.alert(t("Info"), t("An_error_occurred"), [
-                {
-                    text: t("Ok"),
-                }
-            ])
+            setShowAlert(true);
+            setAlertType("Info");
+            setAlertMsg("An_error_occurred");
         } finally {
             setLoading(false);
         }
@@ -106,6 +104,20 @@ const ForgetPassScreen = ({ componentId }) => {
                         <Spinner visible={loading} textContent={t("Loading")} textStyle={{ color: "#fff" }} />
                     </View>
                 </ScrollView>
+                <GlobalAlert
+                    visible={showAlert}
+                    title={alertType}
+                    message={alertMsg}
+                    onConfirm={alertType === "Password_Updated" ? () => {
+                        setShowAlert(false)
+                        Navigation.push(componentId, {
+                            component: {
+                                name: 'LoginScreen',
+                            },
+                        });
+                    } : undefined}
+                    onCancel={() => { setShowAlert(false) }}
+                />
             </NativeBaseProvider>
         </SafeAreaProvider>
     );
