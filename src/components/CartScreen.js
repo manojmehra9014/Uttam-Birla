@@ -204,7 +204,7 @@ const CartScreen = () => {
                 </View>
 
                 <TouchableOpacity onPress={() => handleRemoveItem(item._id)} style={styles.removeButton}>
-                    <Text style={styles.removeButtonText}>Remove</Text>
+                    <Text style={styles.removeButtonText}>{t("Remove")}</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -217,12 +217,8 @@ const CartScreen = () => {
                     <Avatar bg="white" size="xl" source={require('../assets/image/logo.png')} />
                 </View>
                 <View>
-                    <Text style={{ fontSize: 14, color: "#1230AE", fontWeight: '700' }}>
-                        Your Cart
-                    </Text>
-                    <Text style={{ fontSize: 14, color: "#1230AE", fontWeight: '700' }}>
-                        Customize Your Cart & Edit Items.
-                    </Text>
+                    <Text style={{ fontSize: 14, color: "#1230AE", fontWeight: '700' }}>{t("Your_cart")}</Text>
+                    <Text style={{ fontSize: 14, color: "#1230AE", fontWeight: '700' }}>{t("Customize_Your_Cart")}</Text>
                 </View>
             </View>
             <Divider />
@@ -231,8 +227,8 @@ const CartScreen = () => {
                 <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
             ) : cartItems.length === 0 ? (
                 <View style={styles.emptyCartContainer}>
-                    <Icon name="shopping-cart" size={50} color="#1230AE" />
-                    <Text style={styles.emptyCartText}>Your cart is empty</Text>
+                    <Image source={require('../assets/image/cart.png')} style={{ height: '50%', width: "100%" }} />
+                    <Text style={styles.emptyCartText}>{t("Your_cart_is_empty")}</Text>
                 </View>
             ) : (
                 <FlatList
@@ -246,11 +242,11 @@ const CartScreen = () => {
             {cartItems.length > 0 && (
                 <>
                     <View style={styles.totalContainer}>
-                        <Text style={styles.totalText}>Total: ₹{totalAmount.toFixed(2)}</Text>
+                        <Text style={styles.totalText}>{t("Total_")} ₹{totalAmount.toFixed(2)}</Text>
                     </View>
                     <View style={{ backgroundColor: "#fff", justifyContent: "center", alignItems: "center", padding: 10 }}>
                         <TouchableOpacity style={styles.checkoutButton} onPress={handleCheckout}>
-                            <Text style={styles.checkoutButtonText}>Checkout Now</Text>
+                            <Text style={styles.checkoutButtonText}>{t("Checkout_Now")}</Text>
                         </TouchableOpacity>
                     </View>
                 </>
@@ -265,7 +261,7 @@ const CartScreen = () => {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Order Summary</Text>
+                        <Text style={styles.modalTitle}>{t("Order_Summary")}</Text>
                         <ScrollView style={styles.scrollView}>
                             {distributerList &&
                                 <View style={{ marginBottom: 15 }}>
@@ -305,10 +301,10 @@ const CartScreen = () => {
                             ))}
                         </ScrollView>
                         <View>
-                            <Text style={styles.modalTotal}>Total: ₹{totalAmount.toFixed(2)}</Text>
+                            <Text style={styles.modalTotal}>{t("Total_")} ₹{totalAmount.toFixed(2)}</Text>
                             <View style={styles.modalActions}>
-                                <Button mode="contained" onPress={confirmCheckout} style={{ backgroundColor: "#1230AE", borderRadius: 25 }} >Place Order</Button>
-                                <Button mode="contained" onPress={() => setShowModal(false)} style={{ backgroundColor: "#1230AE", borderRadius: 25 }} >Cancel</Button>
+                                <Button mode="contained" onPress={confirmCheckout} style={{ backgroundColor: "#1230AE", borderRadius: 25 }} >{t("Place_Order")}</Button>
+                                <Button mode="contained" onPress={() => setShowModal(false)} style={{ backgroundColor: "#1230AE", borderRadius: 25 }} >{t("Cancel")}</Button>
                             </View>
                         </View>
                         <Spinner visible={spinner} textContent={t("Submitting")} textStyle={{ color: "#fff" }} />
@@ -328,7 +324,7 @@ const CartScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#fff',
     },
     loader: {
         flex: 1,

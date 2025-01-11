@@ -193,6 +193,7 @@ const SignUpScreen = ({ componentId }) => {
                                     bg: "blue.400",
                                     endIcon: <CheckIcon size="5" />,
                                 }}
+                                color={"#1230AE"}
                                 mt={1}
                                 _light={{
                                     borderColor: "#1230AE",
@@ -223,6 +224,7 @@ const SignUpScreen = ({ componentId }) => {
                                         bg: "teal.600",
                                         endIcon: <CheckIcon size="5" />,
                                     }}
+                                    color={"#1230AE"}
                                     mt={1}
                                     _light={{
                                         borderColor: "#1230AE",
@@ -255,6 +257,7 @@ const SignUpScreen = ({ componentId }) => {
                                     borderColor: "#1230AE",
                                     bg: "white",
                                 }}
+                                color={"#1230AE"}
                                 value={password}
                                 onChangeText={setPassword}
                                 InputRightElement={
@@ -274,7 +277,7 @@ const SignUpScreen = ({ componentId }) => {
                                         />
                                     </Button>
                                 }
-                                placeholder="Password"
+                                placeholder={t("passwordPlaceholder")}
                             />
                         </Box>
 

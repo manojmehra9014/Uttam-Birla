@@ -255,7 +255,7 @@ const HomeScreen = () => {
                                 fontWeight: 'bold',
                                 marginBottom: 4,
                             }}>
-                                {t('Welcome to Uttam Birla 🎨!')}
+                                {t('welcomeMessage')}
                             </Text>
                             <Text style={{ fontSize: 14, color: "#1230AE", fontWeight: 700 }}>
                                 {t('subMessage')}

@@ -159,12 +159,12 @@ const CouponScreen = () => {
                     <View style={styles.container}>
                         <View style={styles.containerImage}>
                             <Image
-                                source={require('../assets/image/logo.png')}
+                                source={require('../assets/image/gift.jpeg')}
                                 style={styles.image}
-                                resizeMode="contain"
+                            // resizeMode="contain"
                             />
                         </View>
-                        <View style={{ alignItems: "center", justifyContent: "center", marginBottom: 30 }}>
+                        <View style={{ alignItems: "center", justifyContent: "center", marginBottom: 30, padding: 16 }}>
                             <Text style={{ fontSize: 22, color: "#1230AE", fontWeight: "800" }}>{t('CouponWithdrawal')}</Text>
                         </View>
                         <View style={styles.formContainer}>
@@ -340,7 +340,6 @@ const CouponScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
         backgroundColor: '#fff',
     },
     containerImage: {
@@ -348,11 +347,12 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     image: {
-        width: '80%',
-        height: 150,
+        width: '100%',
+        height: 250,
     },
     formContainer: {
         alignItems: 'center',
+        padding: 16
     },
     inputContainer: {
         flexDirection: 'row',

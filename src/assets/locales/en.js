@@ -4,7 +4,7 @@ export default {
   password: "Password",
   dontHaveAccount: "Don't have an account?",
   forgetPassword: "Forget Password?",
-  welcomeMessage: "Join us and add colors to your life!",
+  welcomeMessage: "Welcome to Uttam Birla 🎨!",
   subMessage: "Easy shopping. Beautiful walls.",
   hello: "Hello,",
   signUp: "Sign Up!",
@@ -69,6 +69,14 @@ export default {
   no_internet: "No Internet Connection",
   Exit_App: "Exit App",
   want_to_exit: "Do you want to exit?",
-
-
+  Generate_Password: "Generate Password",
+  Your_cart: "Your Cart",
+  Customize_Your_Cart: "Customize Your Cart & Edit Items.",
+  Your_cart_is_empty: "Your cart is empty",
+  Checkout_Now: "Checkout Now",
+  Place_Order: "Place_Order",
+  Remove: "Remove",
+  Total_: "Total :",
+  Order_Summary: "Order Summary",
+  Verify: "Verify",
 };

@@ -93,7 +93,7 @@ const ForgetPassScreen = ({ componentId }) => {
                                 placeholderTextColor="#AAAAAA"
                             />
                             <TouchableOpacity onPress={handleOpt} style={styles.button}>
-                                <Text style={styles.buttonText}>{t("Generate Password")}</Text>
+                                <Text style={styles.buttonText}>{t("Generate_Password")}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={() => {
                                 Navigation.pop(componentId);

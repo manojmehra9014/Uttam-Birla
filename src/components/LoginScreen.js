@@ -157,6 +157,7 @@ const LoginScreen = ({ componentId }) => {
                                     borderColor: "#1230AE",
                                     bg: "white",
                                 }}
+                                color={"#1230AE"}
                                 value={password}
                                 onChangeText={setPassword}
                                 InputRightElement={
@@ -176,7 +177,7 @@ const LoginScreen = ({ componentId }) => {
                                         />
                                     </Button>
                                 }
-                                placeholder="Password"
+                                placeholder={t("passwordPlaceholder")}
                             />
                         </Box>
                         <TouchableOpacity onPress={() => { handleLogin(phone, password) }} style={styles.button}>
@@ -204,6 +205,7 @@ const LoginScreen = ({ componentId }) => {
                         >
                             {t("dontHaveAccount")}
                         </Text>
+                        <Text style={{ bottom: 30, position: "absolute" }}>v1.0.1</Text>
                     </View>
                 </View>
                 <GlobalAlert

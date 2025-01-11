@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Avatar, Divider } from 'native-base';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Navigation } from 'react-native-navigation';
@@ -75,13 +75,12 @@ const SettingsScreen = ({ componentId }) => {
         }
     };
 
-    return (
+    return (<>
+        <Image source={require("../assets/image/painter.png")} style={{ width: "100%", height: 300 }} resizeMode='cover' />
         <View style={styles.container}>
             <View style={styles.header}>
-                {/* Avatar at the top center */}
-                <Avatar bg="blue.500" size="xl" source={require('../assets/image/painter.png')} />
                 <Text style={styles.headerText}>{t('Setting')}</Text>
-            </View>
+            </View >
 
             <Divider />
 
@@ -126,16 +125,15 @@ const SettingsScreen = ({ componentId }) => {
 
 
 
-        </View>
-
+        </View >
+    </>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
-        paddingTop: 50,
+        backgroundColor: '#fff',
         paddingHorizontal: 20,
     },
     header: {
@@ -146,14 +144,13 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         color: '#1230AE',
-        marginTop: 10,
     },
     section: {
         marginVertical: 10,
     },
     sectionButton: {
         paddingVertical: 15,
-        backgroundColor: '#fff',
+        backgroundColor: '#1230AE',
         borderRadius: 8,
         shadowColor: '#000',
         shadowOpacity: 0.1,
@@ -167,7 +164,7 @@ const styles = StyleSheet.create({
     sectionText: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#1230AE',
+        color: '#fff',
     },
     modalOverlay: {
         flex: 1,

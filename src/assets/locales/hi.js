@@ -4,7 +4,7 @@ export default {
     password: "पासवर्ड",
     dontHaveAccount: "खाता नहीं है?",
     forgetPassword: "पासवर्ड भूल गए?",
-    welcomeMessage: "हमसे जुड़ें और अपनी ज़िंदगी में रंग भरें!",
+    welcomeMessage: "Uttam birla - में आपका स्वागत है!",
     subMessage: "आसान खरीदारी। खूबसूरत दीवारें।",
     hello: "नमस्ते,",
     signUp: "साइन अप करें!",
@@ -69,6 +69,16 @@ export default {
     no_internet: "कोई इंटरनेट कनेक्शन नहीं",
     want_to_exit: "क्या आपको बाहर निकलना है?",
     Exit_App: "ऐप से बाहर निकलें",
+    Generate_Password: "पासवर्ड जनरेट करें",
+    Your_cart: "आपका कार्ट",
+    Customize_Your_Cart: "अपनी कार्ट को अनुकूलित करें और आइटम संपादित करें।",
+    Your_cart_is_empty: "आपकी खरीदारी की टोकरी खाली है",
+    Checkout_Now: "कृपया अभी चेकआउट करें",
+    Place_Order: "अपना आर्डर दें",
+    Remove: "हटा सकते हैं",
+    Total_: "कुल :",
+    Order_Summary: "आपका ऑर्डर सारांश",
+    Verify: "सत्यापित करें",
 
 
 };
