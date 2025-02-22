@@ -102,14 +102,14 @@ const LoginScreen = ({ componentId }) => {
                 } else {
                     showSpinner(false);
                     setShowAlert(true);
-                    setAlertMsg("An_error_occurred")
+                    setAlertMsg(response?.message || "An_error_occurred")
                 }
             } catch (err) {
                 console.log(err)
                 console.log(err.response)
                 showSpinner(false);
                 setShowAlert(true);
-                setAlertMsg("Please_fill_all_required_fields_correctly_to_proceed")
+                setAlertMsg(err?.response?.message || "Please_fill_all_required_fields_correctly_to_proceed")
             }
         } else {
             await setAuthentication(false);

@@ -57,7 +57,7 @@ const CouponScreen = () => {
                 showSpinner(false);
                 setShowAlert(true);
                 setAlertType("Server_Error");
-                setAlertMsg(error.response.data.error);
+                setAlertMsg(error?.response?.message || "An_error_occurred");
             }
         } else {
             setShowAlert(true);

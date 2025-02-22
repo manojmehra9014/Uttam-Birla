@@ -100,14 +100,14 @@ const SignUpScreen = ({ componentId }) => {
                     console.log("Getting issue in app");
                     setShowAlert(true);
                     setAlertType("Info");
-                    setAlertMsg("An_error_occurred");
+                    setAlertMsg(response?.message || "An_error_occurred");
                     return;
                 }
-            } catch (error) {
+            } catch (err) {
                 showSpinner(false);
                 setShowAlert(true);
                 setAlertType("Info");
-                setAlertMsg("An_error_occurred");
+                setAlertMsg(err?.response?.message || "An_error_occurred");
                 return;
             } finally {
                 showSpinner(false);

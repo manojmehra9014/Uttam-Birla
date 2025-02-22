@@ -63,7 +63,7 @@ const HomeScreen = () => {
                 console.error('Error fetching items:', error);
                 setLoading(false);
                 setShowAlert(true);
-                setAlertMsg("An_error_occurred")
+                setAlertMsg(error?.response?.message || "An_error_occurred")
             } finally {
                 setLoading(false);
             }

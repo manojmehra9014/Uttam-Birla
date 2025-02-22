@@ -60,13 +60,13 @@ const ForgetPassScreen = ({ componentId }) => {
             } else {
                 setShowAlert(true);
                 setAlertType("Info");
-                setAlertMsg("An_error_occurred");
+                setAlertMsg(response?.message || "An_error_occurred");
             }
         } catch (error) {
             setLoading(false);
             setShowAlert(true);
             setAlertType("Info");
-            setAlertMsg("An_error_occurred");
+            setAlertMsg(error?.response?.message || "An_error_occurred");
         } finally {
             setLoading(false);
         }
