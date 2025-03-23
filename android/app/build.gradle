@@ -81,8 +81,8 @@ project.ext.react = [
         applicationId "com.uttambirla"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 4
+        versionName "1.0.3"
         multiDexEnabled true
 
     }

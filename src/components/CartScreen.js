@@ -42,7 +42,7 @@ const CartScreen = () => {
         } catch (error) {
             setShowAlert(true);
             setAlertType("Info");
-            setAlertMsg(error?.response?.message || "An_error_occurred");
+            setAlertMsg(error?.response?.data?.message || "An_error_occurred");
             return;
         }
     }

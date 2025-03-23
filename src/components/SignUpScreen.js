@@ -107,7 +107,7 @@ const SignUpScreen = ({ componentId }) => {
                 showSpinner(false);
                 setShowAlert(true);
                 setAlertType("Info");
-                setAlertMsg(err?.response?.message || "An_error_occurred");
+                setAlertMsg(err?.response?.data?.message || "An_error_occurred");
                 return;
             } finally {
                 showSpinner(false);

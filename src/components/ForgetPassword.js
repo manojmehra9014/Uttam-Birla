@@ -66,7 +66,7 @@ const ForgetPassScreen = ({ componentId }) => {
             setLoading(false);
             setShowAlert(true);
             setAlertType("Info");
-            setAlertMsg(error?.response?.message || "An_error_occurred");
+            setAlertMsg(error?.response?.data?.message || "An_error_occurred");
         } finally {
             setLoading(false);
         }
@@ -148,6 +148,7 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         borderColor: '#1230AE',
         backgroundColor: '#FFFFFF',
+        color: "#1230AE"
     },
     button: {
         width: '90%',
