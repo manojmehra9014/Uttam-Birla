@@ -195,6 +195,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-around",
         padding: 10
+    },
+    languageText: {
+        color: "#1230AE"
     }
 });
 
